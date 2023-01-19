@@ -46,9 +46,9 @@ function confirmar_socio()
                     <h3 class="nome"><?php echo $users->display_name ?></h3>
                     <h4 class="socio">Sócio Nº: <?php echo intval($socio) ?></h4>
                 </div>
-                <p style="color: green;">Socio Checado Com Sucesso!</p>
+                <p style="color: green;">Socio Verificado Com Sucesso!</p>
                 <div class="div_links">
-                    <a href="<?php echo home_url('checagem-de-socio/'); ?>" class="bta">Nova Checagem</a>
+                    <a href="<?php echo home_url('checagem-de-socio/'); ?>" class="bta">Nova Verificação</a>
                     <a href="<?php echo home_url(); ?>" class="bta">Sair</a>
                 </div>
             </div>
@@ -60,7 +60,7 @@ function confirmar_socio()
                 <?php if ($error === 1) : ?>
                     <div class="error">Sócio Não Encontrado!</div>
                 <?php endif; ?>
-                <input type="submit" value="Checar" name="submitsocionum">
+                <input type="submit" value="Verificar" name="submitsocionum">
             </form>
         <?php endif; ?>
     </div>

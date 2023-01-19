@@ -159,13 +159,13 @@ function canalizacao()
                         $assinatura,
                         $assinatura2
                     );
-                    $checagem = $wpdb->get_results("SELECT * FROM wpre_aptmd_formador_formados 
-                        WHERE `key` = '" . $certificado->get_key() . "'");
-                    if ($checagem) {
-                        $error = -3;
-                        $emitidos[] = $name[$i];
-                        continue;
-                    }
+                    // $checagem = $wpdb->get_results("SELECT * FROM wpre_aptmd_formador_formados 
+                    //     WHERE `key` = '" . $certificado->get_key() . "'");
+                    // if ($checagem) {
+                    //     $error = -3;
+                    //     $emitidos[] = $name[$i];
+                    //     continue;
+                    // }
                     if (is_array($user_name)) {
                         $cert_data = array(
                             'id_formador' => $user_id,
@@ -198,35 +198,37 @@ function canalizacao()
                         'wpre_aptmd_formador_formados',
                         $cert_data
                     );
-                    file_put_contents('Certificado.svg', $certificado->get_certificado());
-
+                    file_put_contents("Certificado Canalização - " . $name[$i] . ".svg", $certificado->get_certificado());
                     $imagick = new Imagick();
-                    $imagick->readImage('Certificado.svg');
+                    $imagick->readImage("Certificado Canalização - " . $name[$i] . ".svg");
                     $imagick->setImageFormat('pdf');
-                    $imagick->writeImage('Certificado.pdf');
-
-                    $mail = '';
-                    if(is_array($user_name)){
-                        if($assinatura && $assinatura2){
-                            $mail = $email[$i];
-                        }else
-                            $mail = $user->user_email;
-                    }else if($assinatura){
-                        $mail = $email[$i];
-                    }else{
-                        $mail = $user->user_email;
-                    }
+                    $imagick->writeImage("Certificado Canalização - " . $name[$i] . ".pdf");
 
                     $headers = array('Content-Type: text/html; charset=UTF-8');
-                    $attachments = array(ABSPATH => 'Certificado.pdf');
-                    $message = "Olá, {$user_name[0]},<br><br>
-                    Segue em anexo os certificados da sua formação para " . $name[$i] . " 
+                    $attachments = array(ABSPATH => "Certificado Canalização - " . $name[$i] . ".pdf");
+                    $array = is_array($user_name);
+                    $user_name = is_array($user_name) ? $user_name[0] : $user_name;
+                    $message = "Segue em anexo o certificado da tua formação para " . $name[$i] . " 
                     que participou no Workshop de Canalização de " . $data_inicio . " a " . $data_fim . "<br><br> 
-                    Lembre-se de assinar o certificado antes da entrega.<br><br>
+                    Se não colocaste a tua assinatura digital no formulário, assina o certificado antes da entrega.<br><br>
                     Cumprimentos de Luz,<br>
                     Equipe APTMD<br>
                     Atenciosamente";
-                    wp_mail($mail, 'Certificado de Workshop de Canalização', $message, $headers, $attachments);
+                    $message2 = "Olá, ".$name[$i].",<br><br>
+                    Segue em anexo teu certificado da tua formação que participou no Workshop de Canalização de " . $data_inicio . " a " . $data_fim . "<br><br><br><br>
+                    Cumprimentos de Luz,<br>
+                    Equipe APTMD<br>
+                    Atenciosamente";
+                    if($assinatura && $assinatura2 && $array){
+                        wp_mail($email[$i], 'Certificado de Workshop de Canalização', $message2, $headers, $attachments);
+                    }
+                    if($array == false && $assinatura ){
+                        wp_mail($email[$i], 'Certificado de Workshop de Canalização', $message2, $headers, $attachments);
+                    }
+                    wp_mail($user->user_email, 'Certificado de Workshop de Canalização', $message, $headers, $attachments);
+                   
+                    unlink("Certificado Canalização - " . $name[$i] . ".svg");
+                    unlink("Certificado Canalização - " . $name[$i] . ".pdf");
                 }
             }
         }
@@ -236,8 +238,9 @@ function canalizacao()
     <?php $formador = 'null'; endif; 
     if ($formador === 'null' && !$solo) : ?>
         <form class="formador_extra_form" method="get">
-            <h1 class="formador_pergunta">Deseja Adicionar Um formador extra?<br>
-                Se sim, adicione o email ou número de sócio, caso contrário deixe em <strong>branco!</strong></h1>
+            <h1 class="formador_pergunta">Este workshop tem mais mais do que 1 Formador?
+Se sim adiciona o email ou número de sócio.
+Se não, deixa em <strong>branco</strong>.</h1>
             <label for="formador" class="formador_extra_label"></label>
             <input type="text" name="formador" class="formador_extra" placeholder="Email ou Número de Sócio">
             <input type="submit" class="formador_extra_submit" value="Próximo">
@@ -304,11 +307,12 @@ function canalizacao()
         <?php if ($error <= 0) : ?>
             <h1 class="certificadosh1">Saldo: <?php echo $certi ?> certificados</h1>
             <form class="certificados" method='post' enctype="multipart/form-data">
-                <label for="assinatura"><strong>(Opcional)</strong> Carregue uma imagem dentro dos requisitos estabelecidos contendo a tua assinatura para emitir os certificados já assinados.
-                                        <br>Requisitos: <br> - Imagem em formato .png <br> - Tamanho máximo de 1MB
+                <label for="assinatura"><strong>(Opcional)</strong> Para emitir certificados já assinados, carrega uma imagem com a tua assinatura com estes requisitos:<br>
+- Imagem em formato .png (fundo transparente)<br>
+- Tamanho máximo 2MB
                 </label>
                 <input type="file" name="assinaturaC" class="assinaturaC" accept="image/*">
-                <?php if ($formador): ?>
+                <?php if ($formador != 'null'): ?>
                     <label for="assinaturad"><strong>(Opcional)</strong> Carregue uma imagem dentro dos mesmos requisitos estabelecidos contendo a assinatura do outro formador para emitir os certificados já assinados.
                     </label>
                     <input type="file" name="assinaturad" class="assinaturad" accept="image/*">    
@@ -347,7 +351,7 @@ function canalizacao()
                     <label for="nascimento[]">Data De Nascimento do Formando:</label>
                     <input type="date" name="nascimento[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
-                    <input type="text" name="aluno_email[]" required>
+                    <input type="email" name="aluno_email[]" required>
                 `;
                 container.appendChild(aluno1);
                 button.addEventListener('click', (e) => {
@@ -360,7 +364,7 @@ function canalizacao()
                     <label for="nascimento[]">Data De Nascimento do Formando:</label>
                     <input type="date" name="nascimento[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
-                    <input type="text" name="aluno_email[]" required>
+                    <input type="email" name="aluno_email[]" required>
                     <button class="remover_aluno">Remover Formando</button>
                 `;
                     const remover = aluno.querySelector('.remover_aluno');
@@ -390,14 +394,15 @@ function canalizacao()
                 }
 
                 form.certificados input[type="text"],
-                form.certificados input[type="date"] {
-                    width: 100%;
-                    padding: 12px 20px;
-                    margin: 8px 0;
-                    box-sizing: border-box;
-                    border: 2px solid #5291C5;
-                    border-radius: 4px;
-                }
+            form.certificados input[type="email"],
+            form.certificados input[type="date"] {
+                width: 100%;
+                padding: 12px 20px;
+                margin: 8px 0;
+                box-sizing: border-box;
+                border: 2px solid #5291C5;
+                border-radius: 4px;
+            }
 
                 form.certificados input[type="submit"] {
                     width: 100%;

@@ -6,89 +6,52 @@ function field_user()
     $error = 0;
 
     global $wpdb;
+
     if (isset($_POST['submitsocioemail'])) {
-        $max_socio = intval($wpdb->get_var("SELECT MAX(CAST(meta_value as UNSIGNED)) FROM $wpdb->usermeta WHERE meta_key = 'Socio'"));
+        // $max_socio = intval($wpdb->get_var("SELECT MAX(CAST(meta_value as UNSIGNED)) FROM $wpdb->usermeta WHERE meta_key = 'Socio'"));
         $socio = $_POST['socio'];
         $socio_type = $_POST['socio-type'];
+        $check = $_POST['mensagem'] == 'on' ? true : false;
         $user = get_user_by('email', $socio);
-
-        $user_meta = get_user_meta($user->ID, 'Socio', true);
         
-        if ($user_meta) {
-            $error = 2;
-        } else {
-            if ($user !== false) {
-                $id = $user->ID;
-                $socio_num = $max_socio + 1;
-                update_user_meta($id, "Socio", $socio_num);
-                update_user_meta($id, "Socio Type", $socio_type);
-                $sucess = 1;
+        if ($user !== false && $check === false) {
+            $id = $user->ID;
+            update_user_meta($id, "Socio Type", $socio_type);
+            $sucess = 1;
 
-                $message = '
-                <!DOCTYPE html>
-                <html lang="en">
+            $message = '<h1>Olá! Seja bem-vinda Querida Alma, ' . get_user_meta($id, 'first_name', true) . ' ' . get_user_meta($id, 'last_name', true) . '</h1>
+                <p class="content">Temos a alegria de informar que a tua ficha de sócio foi validada com sucesso. <br><br><br>
+                    Para avançar deverás aceder à tua área de sócio através do link: https://aptmd.org/login/ , clicar no menu à
+                    esquerda em "Ativação de Quotas de Sócio" e seguir os passos. <br><br><br>
+                    Se tiveres qualquer questão, envias um email para suporte@aptmd.org<br><br><br>
+                    Toda nossa gratidão por fazeres crescer o Coração na Nova Terra.<br><br>
+                <h3 class="signature">Associação Portuguesa de Terapia Multidimensional (APTMD)</h3>';
+            $header[] = 'Content-Type: text/html;';
+            $results = wp_mail($socio, 'APTMD Validação de Sócio', $message, $header);
+        }else if($user !== false && $check){
+            $id = $user->ID;
+            update_user_meta($id, "Socio Type", 'amigo-1');
+            $sucess = 1;
 
-                <head>
-                    <meta charset="UTF-8">
-                    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <style>
-                        .Email {
-                            font-family: Arial, sans-serif;
-                            max-width: 600px;
-                            margin: 0 auto;
-                        }
-
-                        .Email img {
-                            display: block;
-                            margin: 0 auto;
-                            max-width: 300px;
-                        }
-
-                        .Email h1 {
-                            text-align: center;
-                            font-size: 24px;
-                            font-weight: normal;
-                            margin: 20px 0;
-                        }
-
-                        .Email .content {
-                            font-size: 16px;
-                            line-height: 1.5;
-                            margin: 20px 0;
-                        }
-
-                        .Email .signature {
-                            text-align: right;
-                            font-size: 14px;
-                            margin-top: 20px;
-                        }
-                    </style>
-                </head>
-
-                <body>
-                <div class="Email">
-                    <img src="https://aptmd.org/wp-content/uploads/2023/01/phpchDK5rAM-removebg-preview.png" alt=""><br>
-                    <h1>Olá! Seja bem-vinda Querida Alma, ' . get_user_meta($id, 'first_name', true) . ' ' . get_user_meta($id, 'last_name', true) . '</h1>
-                    <p class="content">Temos a alegria de informar que a tua ficha de sócio foi validada com sucesso. <br><br>
-                        Segue o teu número de sócio: ' . $socio_num . '.<br><br><br>
-                        Para avançar deverás aceder à tua área de sócio através do link: https://aptmd.org/login/ , clicar no menu à
-                        esquerda em "Ativação Sócio" e seguir os passos. <br><br><br>
-                        Se tiveres qualquer questão, envias um email para suporte@aptmd.org<br><br><br>
-                        Toda nossa gratidão por fazeres crescer o Coração na Nova Terra.<br><br>
-                    <h3 class="signature">Associação Portuguesa de Terapia Multidimensional (APTMD)</h3>
-                    </p>
-                </div>
-                </body>
-
-</html>';
-                $header[] = 'Content-Type: text/html;';
-                wp_mail($socio, 'APTMD Validação de Sócio', $message, $header);
-            } else {
-                $error = 1;
-            }
+            $message = '
+                <img src="https://aptmd.org/wp-content/uploads/2023/01/phpchDK5rAM-removebg-preview.png" alt=""><br>
+                <h1>Olá! Seja bem-vinda Querida Alma, ' . get_user_meta($id, 'first_name', true) . ' ' . get_user_meta($id, 'last_name', true) . '</h1>
+                <p class="content">Olá!<br>
+                De momento, com os teus dados de currículo, podes apenas inscrever-te como SÓCIO AMIGO.<br>
+                Quando tirares uma formação de Terapeuta Multidimensional certificada pela APTMD<br>
+                poderás candidatar-te a sócio terapeuta. Se acreditas que houve um erro, <br>
+                faz uma solicitação para https://aptmd.org/suporte
+                </p>
+                <h3 class="signature">Associação Portuguesa de Terapia Multidimensional (APTMD)</h3>';
+            $headers = array('Content-Type: text/html; charset=UTF-8');
+            $results = wp_mail($socio, 'APTMD Validação de Sócio', $message, $headers);
+        }else{
+            $error = -1;
         }
     }
+    if ($error == -1): ?>
+        <div class="error">Utilizador Não Encontrado!</div>
+    <?php endif;
     if ($sucess === 0) :
 ?>
         <form class="form-container" action="" method="post">
@@ -104,11 +67,11 @@ function field_user()
             <select name="socio-type" id="socio-type">
                 <option value="terapeuta-1">Sócio Terapeuta 1 Semestre</option>
                 <option value="terapeuta-2">Sócio Terapeuta 2 Semestre</option>
-                <option value="formador-1">Sócio Formador 1 Semestre</option>
-                <option value="formador-2">Sócio Formador 2 Semestre</option>
                 <option value="amigo-1">Sócio Amigo 1 Semestre</option>
                 <option value="amigo-2">Sócio Amigo 2 Semestre</option>
             </select>
+            <label for="mensagem">O utilizador não foi formado pela APTMD, validar como Socio Amigo:</label>
+            <input type="checkbox" name="mensagem" class="mensagem">
             <input type="submit" value="Validar Sócio" name="submitsocioemail">
         </form>
         
@@ -117,6 +80,17 @@ function field_user()
         <div class="sucess">Sócio Validado Com Sucesso!</div>
     <?php endif; ?>
     <style>
+        label[for="mensagem"] {
+    font-size: 18px;
+    margin-bottom: 5px;
+    font-family: 'Lato', sans-serif;
+}
+
+.mensagem {
+    width: 20px;
+    height: 20px;
+}
+
         .sucess {
             color: #3bb35d;
         }

@@ -62,8 +62,8 @@ class CanalCert{
                 <tspan x='370' dy='20'>- 'Sempre em Pé' Exercício de Canalização pelo Corpo</tspan>
                 <tspan x='370' dy='20'>- Prática de Canalização pela Escrita</tspan>
                 <tspan x='370' dy='20'>- Prática de Canalização pela voz</tspan>
-                <tspan x='370' dy='20'>  Facilitado de {$this->data_inicio} a {$this->data_fim}, graduando-se como canal e estando apto a praticar esta Arte da Nova Terra e </tspan>
-                <tspan x='370' dy='20'> a participar de canalizações de grupo.</tspan></text>
+                <tspan x='370' dy='20'>  Facilitado de {$this->data_inicio} a {$this->data_fim}, graduando-se como canal e estando apto</tspan>
+                <tspan x='370' dy='20'> a praticar esta Arte da Nova Terra e a participar de canalizações de grupo.</tspan></text>
             <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif'
                 font-size='14' id='svg_3' y='740' x='410' stroke-width='0' stroke='#000'
                 fill='#000000'>{$formador1}</text>
@@ -72,9 +72,9 @@ class CanalCert{
                 font-size='14' id='svg_3' y='60' x='370' stroke-width='0' stroke='#000' fill='#000000'>". explode('-',$this->data_fim)[0] ."</text>
                 <image x='1043' y='713' width='80' height='80' xlink:href='". (new QRCode)->render($this->link_key) ."'></image>";
                 if ($assinatura != null)
-                    $this->certificado .= "<image x='375' y='640' width='200' height='70' xlink:href='data:image/png;base64,".$assinatura."'></image>";
+                    $this->certificado .= "<image x='375' y='640' width='200' height='120' xlink:href='data:image/png;base64,".$assinatura."'></image>";
                 if($assinatura2 != null)
-                    $this->certificado .= "<image x='705' y='640' width='200' height='70' xlink:href='data:image/png;base64,".$assinatura2."'></image>";
+                    $this->certificado .= "<image x='705' y='640' width='200' height='120' xlink:href='data:image/png;base64,".$assinatura2."'></image>";
                 $this->certificado .= "</svg>";
         }else{
             $this->formador_name = $formador_name;
@@ -106,13 +106,13 @@ class CanalCert{
                   <tspan x='370' dy='20'>- 'Sempre em Pé' Exercício de Canalização pelo Corpo</tspan>
                   <tspan x='370' dy='20'>- Prática de Canalização pela Escrita</tspan>
                   <tspan x='370' dy='20'>- Prática de Canalização pela voz</tspan>
-                  <tspan x='370' dy='20'>  Facilitado de {$this->data_inicio} a {$this->data_fim}, graduando-se como canal e estando apto a praticar esta Arte da Nova Terra e </tspan>
-                  <tspan x='370' dy='20'>  a participar de canalizações de grupo.</tspan></text>
+                  <tspan x='370' dy='20'>  Facilitado de {$this->data_inicio} a {$this->data_fim}, graduando-se como canal e estando apto</tspan>
+                  <tspan x='370' dy='20'> a praticar esta Arte da Nova Terra e a participar de canalizações de grupo.</tspan></text>
                   <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='14' id='svg_3' y='740' x='410' stroke-width='0' stroke='#000' fill='#000000'>{$this->formador_name}</text>
                   <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='14' id='svg_3' y='60' x='370' stroke-width='0' stroke='#000' fill='#000000'>". explode('-', $this->data_fim)[0] ."</text>
                   <image x='1043' y='713' width='80' height='80' xlink:href='" . (new QRCode)->render($this->link_key)."'></image>";
                   if ($assinatura != null)
-                    $this->certificado .= "<image x='375' y='640' width='200' height='70' xlink:href='data:image/png;base64,".$assinatura."'></image>";
+                    $this->certificado .= "<image x='375' y='640' width='200' height='120' xlink:href='data:image/png;base64,".$assinatura."'></image>";
                   $this->certificado .= "</svg>";
         }
     }

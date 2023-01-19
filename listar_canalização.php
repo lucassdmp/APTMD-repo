@@ -4,7 +4,8 @@ require 'vendor/autoload.php';
 
 use chillerlan\QRCode\QRCode;
 
-function meus_certificados(){
+require_once 'CanalCert.php';
+function meus_canalizacao(){
     ob_start();
 
     global $wpdb;
@@ -16,6 +17,47 @@ function meus_certificados(){
     $link_key = '';
     $mail = '';
     $aluno = '';
+
+    if(isset($_GET['mail'])){
+        $mail = $_GET['mail'];
+        $aluno = $wpdb->get_row("SELECT * FROM wpre_aptmd_formador_formados WHERE key = '$mail'");
+        $formador1 = get_user_by('id', $aluno->id_formador);
+        $formador1 = $formador1->first_name . ' ' . $formador1->last_name;
+        $formador2 = get_user_by('id', $aluno->id_formador2);
+        $formador1 = $formador2 ? array($formador1, $formador2->first_name . ' ' . $formador2->last_name) : $formador1;
+        $pais = explode('/', $aluno->local)[0];
+        $cidade = explode('/', $aluno->local)[1];
+        $espaco = explode('/', $aluno->local)[2];
+        $certificado = new CanalCert(
+            $formador1,
+            $aluno->nome_aluno,
+            $aluno->email_aluno,
+            $aluno->nascimento,
+            $aluno->data_inicio,
+            $aluno->data_fim,
+            $aluno->carga_horaria,
+            $cidade,
+            $pais,
+            $espaco
+        );
+        $file = tempnam('./', 'svg');
+        file_put_contents($file, $certificado->get_certificado());
+
+        $imagick = new Imagick();
+        $imagick->readImage($file);
+        $imagick->setImageFormat('pdf');
+        $imagick->writeImage('certificado.pdf');
+
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        $attachments = array(ABSPATH => 'certificado.pdf');
+
+        wp_mail($current_user->user_email, 'Certificado de Workshop de Terapia Multidimenssional', 'Certificado de Workshop de Terapia Multidimenssional', $headers, $attachments);
+        unlink($file);
+        echo "<h2>Certificado enviado para seu email</h2>";
+        remove_query_arg('mail');
+    }
+
+
     $alunos_formados = $wpdb->get_results("SELECT * FROM wpre_aptmd_formador_formados WHERE id_formador = $user_id");
     ?>
         <table class="meus_alunos">
@@ -92,5 +134,5 @@ function meus_certificados(){
     <?php
     return ob_get_clean();
 }
-add_shortcode('meus_certificados', 'meus_certificados');
+add_shortcode('meus_canalizacao', 'meus_canalizacao');
 ?>
