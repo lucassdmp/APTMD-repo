@@ -51,7 +51,7 @@ function meus_canalizacao(){
         $headers = array('Content-Type: text/html; charset=UTF-8');
         $attachments = array(ABSPATH => 'certificado.pdf');
 
-        wp_mail($current_user->user_email, 'Certificado de Workshop de Terapia Multidimenssional', 'Certificado de Workshop de Terapia Multidimenssional', $headers, $attachments);
+        wp_mail($current_user->user_email, 'Certificado de Workshop de Terapia Multidimenssional', "Segue em anexo o certificado da tua formação para " . $aluno->nome_aluno . " que participou no Workshop de Terapia Multidimensional de " . $aluno->data_inicio . " a " . $aluno->data_fim . "<br><br> Se não colocaste a tua assinatura digital no formulário, assina o certificado antes da entrega.<br><br>Cumprimentos de Luz,<br>Equipe APTMD<br> Atenciosamente", $headers, $attachments);
         unlink($file);
         echo "<h2>Certificado enviado para seu email</h2>";
         remove_query_arg('mail');

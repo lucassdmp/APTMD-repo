@@ -134,12 +134,12 @@ function canalizacao()
                 $carga_horaria = intval($_POST['carga_horaria']);
                 $counts = count($name);
 
-                if(isset($_FILES['assinaturaC']) && $_FILES['assinaturaC']['error'] == 0){
+                if (isset($_FILES['assinaturaC']) && $_FILES['assinaturaC']['error'] == 0) {
                     $assinatura = $_FILES['assinaturaC'];
                     $assinatura = base64_encode(file_get_contents($assinatura['tmp_name']));
                 }
 
-                if(isset($_FILES['assinaturad']) && $_FILES['assinaturad']['error'] == 0){
+                if (isset($_FILES['assinaturad']) && $_FILES['assinaturad']['error'] == 0) {
                     $assinatura2 = $_FILES['assinaturad'];
                     $assinatura2 = base64_encode(file_get_contents($assinatura2['tmp_name']));
                 }
@@ -159,13 +159,13 @@ function canalizacao()
                         $assinatura,
                         $assinatura2
                     );
-                    // $checagem = $wpdb->get_results("SELECT * FROM wpre_aptmd_formador_formados 
-                    //     WHERE `key` = '" . $certificado->get_key() . "'");
-                    // if ($checagem) {
-                    //     $error = -3;
-                    //     $emitidos[] = $name[$i];
-                    //     continue;
-                    // }
+                    $checagem = $wpdb->get_results("SELECT * FROM wpre_aptmd_formador_formados 
+                        WHERE `key` = '" . $certificado->get_key() . "'");
+                    if ($checagem) {
+                        $error = -3;
+                        $emitidos[] = $name[$i];
+                        continue;
+                    }
                     if (is_array($user_name)) {
                         $cert_data = array(
                             'id_formador' => $user_id,
@@ -214,33 +214,34 @@ function canalizacao()
                     Cumprimentos de Luz,<br>
                     Equipe APTMD<br>
                     Atenciosamente";
-                    $message2 = "Olá, ".$name[$i].",<br><br>
+                    $message2 = "Olá, " . $name[$i] . ",<br><br>
                     Segue em anexo teu certificado da tua formação que participou no Workshop de Canalização de " . $data_inicio . " a " . $data_fim . "<br><br><br><br>
                     Cumprimentos de Luz,<br>
                     Equipe APTMD<br>
                     Atenciosamente";
-                    if($assinatura && $assinatura2 && $array){
+                    if ($assinatura && $assinatura2 && $array) {
                         wp_mail($email[$i], 'Certificado de Workshop de Canalização', $message2, $headers, $attachments);
                     }
-                    if($array == false && $assinatura ){
+                    if ($array == false && $assinatura) {
                         wp_mail($email[$i], 'Certificado de Workshop de Canalização', $message2, $headers, $attachments);
                     }
                     wp_mail($user->user_email, 'Certificado de Workshop de Canalização', $message, $headers, $attachments);
-                   
+
                     unlink("Certificado Canalização - " . $name[$i] . ".svg");
                     unlink("Certificado Canalização - " . $name[$i] . ".pdf");
                 }
             }
         }
     }
-    if($error == 144): ?>
+    if ($error == 144) : ?>
         <h3 class="error">Sócio não encontrado!</h3>
-    <?php $formador = 'null'; endif; 
+    <?php $formador = 'null';
+    endif;
     if ($formador === 'null' && !$solo) : ?>
         <form class="formador_extra_form" method="get">
             <h1 class="formador_pergunta">Este workshop tem mais mais do que 1 Formador?
-Se sim adiciona o email ou número de sócio.
-Se não, deixa em <strong>branco</strong>.</h1>
+                Se sim adiciona o email ou número de sócio.
+                Se não, deixa em <strong>branco</strong>.</h1>
             <label for="formador" class="formador_extra_label"></label>
             <input type="text" name="formador" class="formador_extra" placeholder="Email ou Número de Sócio">
             <input type="submit" class="formador_extra_submit" value="Próximo">
@@ -284,10 +285,11 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 border-radius: 4px;
                 cursor: pointer;
             }
+
             .error {
-                    color: red;
-                    text-align: center;
-                }
+                color: red;
+                text-align: center;
+            }
         </style>
     <?php else : ?>
         <?php if ($error == -3) : ?>
@@ -308,15 +310,16 @@ Se não, deixa em <strong>branco</strong>.</h1>
             <h1 class="certificadosh1">Saldo: <?php echo $certi ?> certificados</h1>
             <form class="certificados" method='post' enctype="multipart/form-data">
                 <label for="assinatura"><strong>(Opcional)</strong> Para emitir certificados já assinados, carrega uma imagem com a tua assinatura com estes requisitos:<br>
-- Imagem em formato .png (fundo transparente)<br>
-- Tamanho máximo 2MB
+                    - Imagem em formato .png (fundo transparente)<br>
+                    - Tamanho máximo 2MB
                 </label>
                 <input type="file" name="assinaturaC" class="assinaturaC" accept="image/*">
-                <?php if ($formador != 'null'): ?>
+                <?php if ($formador != 'null') : ?>
                     <label for="assinaturad"><strong>(Opcional)</strong> Carregue uma imagem dentro dos mesmos requisitos estabelecidos contendo a assinatura do outro formador para emitir os certificados já assinados.
                     </label>
-                    <input type="file" name="assinaturad" class="assinaturad" accept="image/*">    
-                <?php endif;?>
+                    <input type="file" name="assinaturad" class="assinaturad" accept="image/*">
+                <?php endif; ?>
+                <h1 class="subtitle" style="color: gray; font-size: small;">Se enviares a imagem da tua assinatura, o teu aluno recebe o certificado diretamente por email.</h1>
                 <div class="container">
                     <div class="localizacao">
                         <label for="cidade">Cidade:</label>
@@ -334,8 +337,6 @@ Se não, deixa em <strong>branco</strong>.</h1>
                         <label for="carga_horaria">Carga Horaria:</label>
                         <input type="text" name="carga_horaria" id="carga_horaria" required>
                     </div>
-                    <div class="alunos">
-                    </div>
                 </div>
                 <input type="submit" value="Criar Certificados" name="criar_cert">
                 <button class="add_cert">Adicionar Mais Um Certificado</button>
@@ -348,12 +349,40 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 aluno1.innerHTML = `
                     <label for="aluno_name[]">Nome Formando:</label>
                     <input type="text" name="aluno_name[]" required>
-                    <label for="nascimento[]">Data De Nascimento do Formando:</label>
-                    <input type="date" name="nascimento[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
                     <input type="email" name="aluno_email[]" required>
+                    <label for="data_aniversario[]">Data de Nascimento Formando:</label>
+                    <input type="date" name="data_aniversario[]" required>
                 `;
+                const dateInput = aluno1.querySelector('input[type="date"]');
+                dateInput.addEventListener('change', (e) => {
+                    const inputDate = new Date(e.target.value);
+                    console.log(inputDate);
+                    const today = new Date();
+                    const age = today.getFullYear() - inputDate.getFullYear();
+                    const check = aluno1.querySelector('input[type="checkbox"]');
+                    if (age < 18 && !check) {
+                        const label = document.createElement('label');
+                        label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
+                        label.className = 'responsavel'
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'responsavel[]';
+                        checkbox.required = true;
+                        aluno1.appendChild(label);
+                        aluno1.appendChild(checkbox);
+                    } else if (age >= 18) {
+                        const checkbox = aluno1.querySelector('input[type="checkbox"]');
+                        const label = aluno1.querySelector('label.responsavel');
+                        if (checkbox) {
+                            aluno1.removeChild(checkbox);
+                            aluno1.removeChild(label);
+                        }
+                    }
+                });
                 container.appendChild(aluno1);
+
+
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
                     const aluno = document.createElement('div');
@@ -361,21 +390,61 @@ Se não, deixa em <strong>branco</strong>.</h1>
                     aluno.innerHTML = `
                     <label for="aluno_name[]">Nome Formando:</label>
                     <input type="text" name="aluno_name[]" required>
-                    <label for="nascimento[]">Data De Nascimento do Formando:</label>
-                    <input type="date" name="nascimento[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
                     <input type="email" name="aluno_email[]" required>
+                    <label for="data_aniversario[]">Data De Nascimento do Formando:</label>
+                    <input type="date" name="data_aniversario[]" required>
                     <button class="remover_aluno">Remover Formando</button>
                 `;
-                    const remover = aluno.querySelector('.remover_aluno');
-                    remover.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        container.removeChild(aluno);
+                    const dateInput = aluno.querySelector('input[type="date"]');
+                    dateInput.addEventListener('change', (e) => {
+                        const inputDate = new Date(e.target.value);
+                        console.log(inputDate);
+                        const today = new Date();
+                        const age = today.getFullYear() - inputDate.getFullYear();
+                        const check = aluno.querySelector('input[type="checkbox"]');
+                        if (age < 18 && !check) {
+                            const label = document.createElement('label');
+                            label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
+                            label.className = 'responsavel'
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.name = 'responsavel[]';
+                            checkbox.required = true;
+                            aluno.appendChild(label);
+                            aluno.appendChild(checkbox);
+                        } else if (age >= 18) {
+                            const checkbox = aluno.querySelector('input[type="checkbox"]');
+                            const label = aluno.querySelector('label.responsavel');
+                            if (checkbox) {
+                                aluno.removeChild(checkbox);
+                                aluno.removeChild(label);
+                            }
+                        }
                     });
+
                     container.appendChild(aluno);
                 });
             </script>
             <style>
+                label[for="assinatura"] {
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    display: block;
+                }
+
+                label[for="assinatura"] strong {
+                    font-weight: normal;
+                }
+
+                input[type="file"].assinatura {
+                    width: 100%;
+                    padding: 12px 20px;
+                    margin: 8px 0;
+                    box-sizing: border-box;
+                    border-radius: 4px;
+                }
+
                 .error {
                     color: red;
                     text-align: center;
@@ -394,15 +463,15 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 }
 
                 form.certificados input[type="text"],
-            form.certificados input[type="email"],
-            form.certificados input[type="date"] {
-                width: 100%;
-                padding: 12px 20px;
-                margin: 8px 0;
-                box-sizing: border-box;
-                border: 2px solid #5291C5;
-                border-radius: 4px;
-            }
+                form.certificados input[type="email"],
+                form.certificados input[type="date"] {
+                    width: 100%;
+                    padding: 12px 20px;
+                    margin: 8px 0;
+                    box-sizing: border-box;
+                    border: 2px solid #5291C5;
+                    border-radius: 8px;
+                }
 
                 form.certificados input[type="submit"] {
                     width: 100%;
@@ -426,23 +495,21 @@ Se não, deixa em <strong>branco</strong>.</h1>
                     cursor: pointer;
                 }
 
-                div.alunos {
-                    background-color: #ffffff;
-                    color: white;
-                    padding: 20px;
-                    margin-top: 20px;
-                }
-
                 button.remover_aluno {
-                    background-color: #ffffff;
-                    color: #4992ce;
-                    border: 1px solid #4992ce;
+                    background-color: #4992ce;
+                    color: #ffffff;
+                    border: 1px solid #ffffff;
+                    border-radius: 5px;
                     cursor: pointer;
                     float: right;
                 }
 
                 .aluno {
-                    margin: 10 0;
+                    margin-top: 25px;
+                    margin-bottom: 25px;
+                    padding: 20px;
+                    border: #4992ce 2px solid;
+                    border-radius: 5px;
                 }
             </style>
         <?php elseif ($error == 1) : ?>

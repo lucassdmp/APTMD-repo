@@ -57,6 +57,7 @@ function field_user()
         <form class="form-container" action="" method="post">
             <label for="socio">Email do Sócio</label>
             <input type="email" name="socio" id="socio" required><br>
+            <label></label>
             <?php if ($error === 1) : ?>
                 <div class="error">Utilizador Não Encontrado!</div>
             <?php endif; ?>
@@ -69,6 +70,8 @@ function field_user()
                 <option value="terapeuta-2">Sócio Terapeuta 2 Semestre</option>
                 <option value="amigo-1">Sócio Amigo 1 Semestre</option>
                 <option value="amigo-2">Sócio Amigo 2 Semestre</option>
+                <option value="formador-1">Sócio Formador 1 Semestre</option>
+                <option value="formador-2">Sócio Formador 2 Semestres</option>
             </select>
             <label for="mensagem">O utilizador não foi formado pela APTMD, validar como Socio Amigo:</label>
             <input type="checkbox" name="mensagem" class="mensagem">

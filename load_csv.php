@@ -7,6 +7,7 @@ function create_load_csv_menu(){
 add_action('admin_menu', 'create_load_csv_menu');
 
 function load_csv_options() {
+    $check = array();
     if (isset($_POST['submit'])) {
 
         $file = $_FILES['file']['tmp_name'];
@@ -15,17 +16,21 @@ function load_csv_options() {
 
             $header = fgetcsv($handle);
 
+
             while (($row = fgetcsv($handle)) !== FALSE) {
                 $data = array_combine($header, $row);
 
                 $socio = intval($data['Socio']);
+                $email = $data['Email'];
                 $nome = $data['Nome'];
-
-                $user = get_user_by('login', $nome);
+                echo $email;
+                if($email == '')
+                    $check[] = array($data['Nome'], $socio); 
+                
+                $user = get_user_by('email', $email);
 
                 if($user !== false){
                     update_user_meta($user->ID, "Socio", $socio);
-                    update_user_meta($user->ID, "Nome", $nome);
                 }
             }
             fclose($handle);

@@ -23,6 +23,8 @@ function validar_socio()
         'terapeuta-2' => 'Sócio Terapeuta 2 Semestres',
         'amigo-1' => 'Sócio Amigo 1 Semestre',
         'amigo-2' => 'Sócio Amigo 2 Semestres',
+        'formador-1' => 'Renovação Sócio Formador Canalização | 1 Semestre',
+        'formador-2' => 'Renovação Sócio Formador Canalização | 2 Semestres'    
     );
     $plano = $op[$type];
 
@@ -51,7 +53,7 @@ function validar_socio()
 
                                                 ?>
     <div class="Socio_container">
-        <h1>Suas Informações</h1>
+        <h1>As Tuas Informações</h1>
         <h2 class="TAG">Nome: <h3 class="info"> <?php echo $meta['first_name'][0] . ' ' . $meta['last_name'][0] ?></h3>
         </h2>
         <h2 class="TAG">Tipo de Socio: <h3 class="info"> <?php echo $meta['Socio Type'][0] ?></h3>
@@ -69,13 +71,17 @@ function validar_socio()
             <?php endif; ?>
             <form action="<?php
                             if ($type == 'amigo-1')
-                                $link = 'product/socio-amigo-1-semestre/';
+                                $link = 'produto/socio-amigo-1-semestre/';
                             else if ($type == 'amigo-2')
-                                $link = 'product/socio-amigo-2-semestres/';
+                                $link = 'produto/socio-amigo-2-semestres/';
                             else if ($type == 'terapeuta-1')
-                                $link = 'product/socio-terapeuta-1-semestre/';
+                                $link = 'produto/socio-terapeuta-1-semestre/';
                             else if ($type == 'terapeuta-2')
-                                $link = 'product/socio-terapeuta-2-semestres/';
+                                $link = 'produto/socio-terapeuta-2-semestres/';
+                            else if ($type == 'formador-1')
+                                $link = 'produto/renovacao-socio-formador-1-semestre';
+                            else if ($type == 'formador-2')
+                                $link = 'produto/renovacao-socio-formador-2-semestres';
                             else
                                 $link = '';
                             echo home_url($link) ?>" method="post">

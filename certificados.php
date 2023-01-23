@@ -284,8 +284,11 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 <?php if ($formador != 'null'): ?>
                     <label for="assinaturad"><strong>(Opcional)</strong> Carregue uma imagem dentro dos mesmos requisitos estabelecidos contendo a assinatura do outro formador para emitir os certificados já assinados.
                     </label>
+                    
                     <input type="file" name="assinaturad" class="assinatura" accept="image/*">    
                 <?php endif;?>
+                
+                <h1 class="subtitle" style="font-size: small;">Se enviares a imagem da tua assinatura, o teu aluno recebe o certificado diretamente por email.</h1>
                 <div class="container">
                     <div class="localizacao">
                         <label for="cidade">Cidade:</label>
@@ -302,8 +305,6 @@ Se não, deixa em <strong>branco</strong>.</h1>
                         <input type="date" name="data_fim" id="data_fim" required>
                         <label for="carga_horaria">Carga Horaria:</label>
                         <input type="text" name="carga_horaria" id="carga_horaria" required>
-                    </div>
-                    <div class="alunos">
                     </div>
                 </div>
                 <input type="submit" value="Criar Certificados" name="criar_cert">
@@ -328,7 +329,35 @@ Se não, deixa em <strong>branco</strong>.</h1>
                     <label for="data_aniversario[]">Data de Nascimento Formando:</label>
                     <input type="date" name="data_aniversario[]" required>
                 `;
+                const dateInput  = aluno1.querySelector('input[type="date"]');
+                dateInput .addEventListener('change', (e) => {
+                    const inputDate  = new Date(e.target.value);
+                    console.log(inputDate );
+                    const today  = new Date();
+                    const age  = today .getFullYear() - inputDate .getFullYear();
+                    const check = aluno1.querySelector('input[type="checkbox"]');
+                    if (age  < 18 && !check) {
+                        const label = document.createElement('label');
+                        label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
+                        label.className = 'responsavel'
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'responsavel[]';
+                        checkbox.required = true;
+                        aluno1 .appendChild(label);
+                        aluno1 .appendChild(checkbox);
+                    }else if(age >= 18 ){
+                        const checkbox = aluno1.querySelector('input[type="checkbox"]');
+                        const label = aluno1.querySelector('label.responsavel');
+                        if (checkbox) {
+                            aluno1.removeChild(checkbox);
+                            aluno1.removeChild(label);
+                        }
+                    }
+                });
             container.appendChild(aluno1);
+
+
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 const aluno = document.createElement('div');
@@ -342,11 +371,33 @@ Se não, deixa em <strong>branco</strong>.</h1>
                     <input type="date" name="data_aniversario[]" required>
                     <button class="remover_aluno">Remover Formando</button>
                 `;
-                const remover = aluno.querySelector('.remover_aluno');
-                remover.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    container.removeChild(aluno);
+                const dateInput  = aluno.querySelector('input[type="date"]');
+                dateInput .addEventListener('change', (e) => {
+                    const inputDate  = new Date(e.target.value);
+                    console.log(inputDate );
+                    const today  = new Date();
+                    const age  = today .getFullYear() - inputDate .getFullYear();
+                    const check = aluno.querySelector('input[type="checkbox"]');
+                    if (age  < 18 && !check) {
+                        const label = document.createElement('label');
+                        label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
+                        label.className = 'responsavel'
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'responsavel[]';
+                        checkbox.required = true;
+                        aluno.appendChild(label);
+                        aluno.appendChild(checkbox);
+                    }else if(age >= 18 ){
+                        const checkbox = aluno.querySelector('input[type="checkbox"]');
+                        const label = aluno.querySelector('label.responsavel');
+                        if (checkbox) {
+                            aluno.removeChild(checkbox);
+                            aluno.removeChild(label);
+                        }
+                    }
                 });
+
                 container.appendChild(aluno);
             });
         </script>
@@ -366,7 +417,6 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 padding: 12px 20px;
                 margin: 8px 0;
                 box-sizing: border-box;
-                border: 2px solid #5291C5;
                 border-radius: 4px;
             }
 
@@ -395,7 +445,7 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 margin: 8px 0;
                 box-sizing: border-box;
                 border: 2px solid #5291C5;
-                border-radius: 4px;
+                border-radius: 8px;
             }
 
             form.certificados input[type="submit"] {
@@ -420,23 +470,21 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 cursor: pointer;
             }
 
-            div.alunos {
-                background-color: #ffffff;
-                color: white;
-                padding: 20px;
-                margin-top: 20px;
-            }
-
             button.remover_aluno {
-                background-color: #ffffff;
-                color: #4992ce;
-                border: 1px solid #4992ce;
+                background-color: #4992ce;
+                color: #ffffff;
+                border: 1px solid #ffffff;
+                border-radius: 5px;
                 cursor: pointer;
                 float: right;
             }
 
             .aluno {
-                margin: 10 0;
+                margin-top: 25px;
+                margin-bottom: 25px;
+                padding: 20px;
+                border: #4992ce 2px solid;
+                border-radius: 5px;
             }
         </style>
 <?php endif;
