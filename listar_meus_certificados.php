@@ -1,6 +1,6 @@
 <?php
 
-require 'TmdCert.php';
+require_once 'TmdCert.php';
 
 function meus_certificados()
 {

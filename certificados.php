@@ -10,6 +10,7 @@ function certificados()
     $user = wp_get_current_user();
     $user_id = $user->ID;
     $user_name = get_user_meta($user_id, 'first_name', true) . ' ' . get_user_meta($user_id, 'last_name', true);
+    $user_email = $user->user_email;
     $html = array();
     $certi = 0;
     global $wpdb;
@@ -17,13 +18,18 @@ function certificados()
     $redirect = 0;
     $link_key = "";
     $emitidos = array();
+    $naogerados = array();
     $assinatura = null;
     $assinatura2 = null;
     $formador = 'null';
+    $english = false;
     //WOOCOMMERCE REST API
     //Comsumer key: ck_1de2660a530ed390b4f1eb7e7ad0eab4a73aaa2c
-    //Secret: cs_b8dd7c690aa6f659946d390f56605168026bd9c9  5046 
-    
+    //Secret: cs_b8dd7c690aa6f659946d390f56605168026bd9c9  5046   2015
+
+
+    //
+
     $formador = isset($_GET['formador']) ? $_GET['formador'] : 'null';
     if ($formador == '') {
         $formador = 'null';
@@ -69,7 +75,6 @@ function certificados()
     if (!empty($datas)) {
         foreach ($datas as $data) :
             $status = $data['status'];
-
             foreach ($data['line_items'] as $lineitem) {
                 if ($lineitem['name'] != 'Certificado Workshop de Terapia Multidimensional') {
                     continue;
@@ -109,6 +114,7 @@ function certificados()
         } else {
             $name = $_POST['aluno_name'];
             $email = $_POST['aluno_email'];
+            $englishC = $_POST['english'];
             $data_inicio = $_POST['data_inicio'];
             $data_fim = $_POST['data_fim'];
             $cidade = $_POST['cidade'];
@@ -143,6 +149,11 @@ function certificados()
                     if (empty($name[$i])) {
                         continue;
                     }
+                    if ($email[$i] == $user_email) {
+                        $error = -6;
+                        $naogerados[$i] = $name[$i];
+                        continue;
+                    }
                     $cert_data = array(
                         'id_formador' => $user_id,
                         'nome_aluno' => $name[$i],
@@ -168,10 +179,23 @@ function certificados()
                         'wpre_aptmd_alunos_formados',
                         $cert_data
                     );
+                    if ($englishC[$i] == 'on')
+                        $english = true;
+                    else
+                        $english = false;
 
-                    $certificado = new TmdCertificado($user_name, $name[$i], $data_inicio,
-                     $data_fim, $carga_horaria, $pais . '/' . $cidade . '/' . 
-                     $espacoformacao, $assinatura, $assinatura2);
+                    $certificado = new TmdCertificado(
+                        $user_name,
+                        $name[$i],
+                        $data_inicio,
+                        $data_fim,
+                        $carga_horaria,
+                        $pais . '/' . $cidade . '/' .
+                            $espacoformacao,
+                        $assinatura,
+                        $assinatura2,
+                        $english
+                    );
 
                     file_put_contents("Certificado TMD - " . $name[$i] . ".svg", $certificado->getCertificado());
                     $imagick = new Imagick();
@@ -184,17 +208,31 @@ function certificados()
                     $$user_name = $array == true ? $user_name[0] : $user_name;
                     $headers = array('Content-Type: text/html; charset=UTF-8');
                     $attachments = array(ABSPATH => "Certificado TMD - " . $name[$i] . ".pdf");
-                    $message = "Segue em anexo o certificado da tua formação para " . $name[$i] . " que participou no Workshop de Terapia Multidimensional de " . $data_inicio . " a " . $data_fim . "<br><br> Se não colocaste a tua assinatura digital no formulário, assina o certificado antes da entrega.<br><br>Cumprimentos de Luz,<br>Equipe APTMD<br> Atenciosamente";
-                    $message2 = "Olá, ".$name[$i].",<br><br>Segue em anexo o certificado da tua formação que ocorreu no Workshop de Terapia Multidimensional de " . $data_inicio . " a " . $data_fim . "<br><br><br><br>Cumprimentos de Luz,<br>Equipe APTMD<br> Atenciosamente";
 
-                    if($assinatura && $assinatura2 && $array){
-                        wp_mail($email[$i], 'Teu Certificado de Workshop de Terapia Multidimensional', $message2, $headers, $attachments);
+                    if (!$english) {
+                        $message = "Segue em anexo o certificado da tua formação para " . $name[$i] . " que participou no Workshop de Terapia Multidimensional de " . $data_inicio . " a " . $data_fim . "<br><br> Se não colocaste a tua assinatura digital no formulário, assina o certificado antes da entrega.<br><br>Cumprimentos de Luz,<br>Equipe APTMD<br> Atenciosamente";
+                        $message2 = "Olá, " . $name[$i] . ",<br><br>Segue em anexo o certificado da tua formação que ocorreu no Workshop de Terapia Multidimensional de " . $data_inicio . " a " . $data_fim . "<br><br><br><br>Cumprimentos de Luz,<br>Equipe APTMD<br> Atenciosamente";
+
+                        if ($assinatura && $assinatura2 && $array) {
+                            wp_mail($email[$i], 'Teu Certificado de Workshop de Terapia Multidimensional', $message2, $headers, $attachments);
+                        }
+                        if ($assinatura && !$array) {
+                            wp_mail($email[$i], 'Teu Certificado de Workshop de Terapia Multidimensional', $message2, $headers, $attachments);
+                        }
+                        wp_mail($user->user_email, 'Certificado de Workshop de Terapia Multidimensional', $message, $headers, $attachments);
+                    }else{
+                        $message = "Follows the certified attached as pdf to " . $name[$i] . " who completed the Multidimensional Healing Workshop from " . $data_inicio . " to " . $data_fim . "<br><br> If you did not upload your signature, please sign before sending the the certificates.<br><br>Light Greetings,<br>Sincerely<br>APTMD Team<br>";
+                        $message2 = "Hello, " . $name[$i] . ",<br><br>Follow a attached your certificate from the Multidimessional Healing Wordshop you completed, from " . $data_inicio . " to " . $data_fim . "<br><br><br><br>Light Greetings,<br>Sincerely<br>APTMD Team<br>";
+
+                        if ($assinatura && $assinatura2 && $array) {
+                            wp_mail($email[$i], 'Your Multidimenssional Healing Certificate', $message2, $headers, $attachments);
+                        }
+                        if ($assinatura && !$array) {
+                            wp_mail($email[$i], 'Your Multidimenssional Healing Certificate', $message2, $headers, $attachments);
+                        }
+                        wp_mail($user->user_email, 'Multidimenssional Healing Certificate', $message, $headers, $attachments);
                     }
-                    if($assinatura && !$array){
-                        wp_mail($email[$i], 'Teu Certificado de Workshop de Terapia Multidimensional', $message2, $headers, $attachments);
-                    }
-                    wp_mail($user->user_email, 'Certificado de Workshop de Terapia Multidimensional', $message, $headers, $attachments);
-                    
+
                     unlink("Certificado TMD - " . $name[$i] . ".svg");
                     unlink("Certificado TMD - " . $name[$i] . ".pdf");
                 }
@@ -203,13 +241,13 @@ function certificados()
     }
     if ($error == 144) : ?>
         <h3 class="error">Sócio não encontrado!</h3>
-        <?php $formador = 'null';
+    <?php $formador = 'null';
     endif;
     if ($formador === 'null' && !$solo) : ?>
         <form class="formador_extra_form" method="get">
             <h1 class="formador_pergunta">Este workshop tem mais mais do que 1 Formador?
-Se sim adiciona o email ou número de sócio.
-Se não, deixa em <strong>branco</strong>.</h1>
+                Se sim adiciona o email ou número de sócio.
+                Se não, deixa em <strong>branco</strong>.</h1>
             <label for="formador" class="formador_extra_label"></label>
             <input type="text" name="formador" class="formador_extra" placeholder="Email ou Número de Sócio">
             <input type="submit" class="formador_extra_submit" value="Próximo">
@@ -260,35 +298,63 @@ Se não, deixa em <strong>branco</strong>.</h1>
             }
         </style>
     <?php else : ?>
-
-        <?php if ($error == -3) : ?>
-            <h3 class="error">Os seguintes certificados já foram emitidos: <?php foreach ($emitidos as $emitido) {
-                                                                                echo $emitido . ", ";
+        <?php if ($error <= -3) : ?>
+            <h3 class="error">Os seguintes certificados não foram emitidos: <?php $inte = 0;
+                                                                            foreach ($naogerados as $naoemitido) {
+                                                                                $inte += 1;
+                                                                                if (count($naogerados) == $inte)
+                                                                                    echo $naoemitido . ".";
+                                                                                else
+                                                                                    echo $naoemitido . ", ";
                                                                             }
                                                                             ?></h3>
         <?php endif; ?>
-        <?php if ($error == -2) : ?>
+        <?php if ($error <= -3) : ?>
+            <h3 class="error">Os seguintes certificados já foram emitidos: <?php $inte = 0;
+                                                                            foreach ($emitidos as $emitido) {
+                                                                                $inte += 1;
+                                                                                if (count($emitidos) == $inte)
+                                                                                    echo $emitido . ".";
+                                                                                else
+                                                                                    echo $emitido . ", ";
+                                                                            }
+                                                                            ?></h3>
+        <?php endif; ?>
+        <?php if ($error <= -2) : ?>
             <h3 class="error">A data de inicio deve ser maior que a data de fim!</h3>
         <?php endif; ?>
-        <?php if ($error == -1) : ?>
+        <?php if ($error <= -1) : ?>
             <h3 class="error">A carga horária deve ser maior que 12H</h3>
         <?php endif; ?>
         <?php if ($error <= 0) : ?>
             <h1 class="certificadosh1">Saldo: <?php echo $certi ?> certificados</h1>
             <form class="certificados" method='post' enctype="multipart/form-data">
-                <label for="assinatura"><strong>(Opcional)</strong> Para emitir certificados já assinados, carrega uma imagem com a tua assinatura com estes requisitos:<br>
-- Imagem em formato .png (fundo transparente)<br>
-- Tamanho máximo 2MB
-                </label>
-                <input type="file" name="assinatura" class="assinatura" accept="image/*">
-                <?php if ($formador != 'null'): ?>
-                    <label for="assinaturad"><strong>(Opcional)</strong> Carregue uma imagem dentro dos mesmos requisitos estabelecidos contendo a assinatura do outro formador para emitir os certificados já assinados.
+                <label for="assinatudasCheck" class='assinatudasCheckLabel'>DESEJAS INSERIR AS ASSINATURAS DIGITAIS E EMITIR OS CERTIFICADOS JÁ ASSINADOS?</label>
+                <input type="checkbox" name="assinatudasCheck" class='assinatudasCheck'>
+                <div class="assinaturasDIV" hidden>
+                    <label for="assinatura"><strong>(Opcional)</strong> Para emitir certificados já assinados, carrega uma imagem com a tua assinatura com estes requisitos:<br>
+                        - Imagem em formato .png (fundo transparente)<br>
+                        - Tamanho máximo 2MB
                     </label>
-                    
-                    <input type="file" name="assinaturad" class="assinatura" accept="image/*">    
-                <?php endif;?>
-                
-                <h1 class="subtitle" style="font-size: small;">Se enviares a imagem da tua assinatura, o teu aluno recebe o certificado diretamente por email.</h1>
+                    <input type="file" name="assinatura" class="assinatura" accept="image/*">
+                    <?php if ($formador != 'null') : ?>
+                        <label for="assinaturad"><strong>(Opcional)</strong> Carregue uma imagem dentro dos mesmos requisitos estabelecidos contendo a assinatura do outro formador para emitir os certificados já assinados.
+                        </label>
+                        <input type="file" name="assinaturad" class="assinatura" accept="image/*">
+                    <?php endif; ?>
+                    <h1 class="subtitle" style="font-size: small;">Se enviares a imagem da tua assinatura, o teu aluno recebe o certificado diretamente por email.</h1><br>  
+                </div>
+                <script>
+                    const assCheck = document.querySelector('.assinatudasCheck');
+                    const assDIVS = document.querySelector('.assinaturasDIV');
+                    assCheck.addEventListener('change', () => {
+                        if (assCheck.checked) {
+                            assDIVS.removeAttribute('hidden');;
+                        } else {
+                            assDIVS.setAttribute('hidden', '');
+                        }
+                    })
+                </script>
                 <div class="container">
                     <div class="localizacao">
                         <label for="cidade">Cidade:</label>
@@ -322,6 +388,8 @@ Se não, deixa em <strong>branco</strong>.</h1>
             const aluno1 = document.createElement('div');
             aluno1.className = 'aluno';
             aluno1.innerHTML = `
+                    <label for="english[]">Deseja Emitir o Certificado em Inglês?</label>
+                    <input type="checkbox" name="english[]" required>
                     <label for="aluno_name[]">Nome Formando:</label>
                     <input type="text" name="aluno_name[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
@@ -329,32 +397,33 @@ Se não, deixa em <strong>branco</strong>.</h1>
                     <label for="data_aniversario[]">Data de Nascimento Formando:</label>
                     <input type="date" name="data_aniversario[]" required>
                 `;
-                const dateInput  = aluno1.querySelector('input[type="date"]');
-                dateInput .addEventListener('change', (e) => {
-                    const inputDate  = new Date(e.target.value);
-                    console.log(inputDate );
-                    const today  = new Date();
-                    const age  = today .getFullYear() - inputDate .getFullYear();
-                    const check = aluno1.querySelector('input[type="checkbox"]');
-                    if (age  < 18 && !check) {
-                        const label = document.createElement('label');
-                        label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
-                        label.className = 'responsavel'
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.name = 'responsavel[]';
-                        checkbox.required = true;
-                        aluno1 .appendChild(label);
-                        aluno1 .appendChild(checkbox);
-                    }else if(age >= 18 ){
-                        const checkbox = aluno1.querySelector('input[type="checkbox"]');
-                        const label = aluno1.querySelector('label.responsavel');
-                        if (checkbox) {
-                            aluno1.removeChild(checkbox);
-                            aluno1.removeChild(label);
-                        }
+            const dateInput = aluno1.querySelector('input[type="date"]');
+            dateInput.addEventListener('change', (e) => {
+                const inputDate = new Date(e.target.value);
+                console.log(inputDate);
+                const today = new Date();
+                const age = today.getFullYear() - inputDate.getFullYear();
+                const check = aluno1.querySelector('input.responsavel');
+                if (age < 18 && !check) {
+                    const label = document.createElement('label');
+                    label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
+                    label.className = 'responsavel'
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = 'responsavel[]';
+                    checkbox.className = 'responsavel';
+                    checkbox.required = true;
+                    aluno1.appendChild(label);
+                    aluno1.appendChild(checkbox);
+                } else if (age >= 18) {
+                    const checkbox = aluno1.querySelector('input.responsavel');
+                    const label = aluno1.querySelector('label.responsavel');
+                    if (checkbox) {
+                        aluno1.removeChild(checkbox);
+                        aluno1.removeChild(label);
                     }
-                });
+                }
+            });
             container.appendChild(aluno1);
 
 
@@ -363,6 +432,8 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 const aluno = document.createElement('div');
                 aluno.className = 'aluno';
                 aluno.innerHTML = `
+                    <label for="english[]">Deseja Emitir o Certificado em Inglês?</label>
+                    <input type="checkbox" name="english[]" required>
                     <label for="aluno_name[]">Nome Formando:</label>
                     <input type="text" name="aluno_name[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
@@ -371,25 +442,26 @@ Se não, deixa em <strong>branco</strong>.</h1>
                     <input type="date" name="data_aniversario[]" required>
                     <button class="remover_aluno">Remover Formando</button>
                 `;
-                const dateInput  = aluno.querySelector('input[type="date"]');
-                dateInput .addEventListener('change', (e) => {
-                    const inputDate  = new Date(e.target.value);
-                    console.log(inputDate );
-                    const today  = new Date();
-                    const age  = today .getFullYear() - inputDate .getFullYear();
-                    const check = aluno.querySelector('input[type="checkbox"]');
-                    if (age  < 18 && !check) {
+                const dateInput = aluno.querySelector('input[type="date"]');
+                dateInput.addEventListener('change', (e) => {
+                    const inputDate = new Date(e.target.value);
+                    console.log(inputDate);
+                    const today = new Date();
+                    const age = today.getFullYear() - inputDate.getFullYear();
+                    const check = aluno.querySelector('input.responsavel');
+                    if (age < 18 && !check) {
                         const label = document.createElement('label');
                         label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
                         label.className = 'responsavel'
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
                         checkbox.name = 'responsavel[]';
+                        checkbox.className = 'responsavel';
                         checkbox.required = true;
                         aluno.appendChild(label);
                         aluno.appendChild(checkbox);
-                    }else if(age >= 18 ){
-                        const checkbox = aluno.querySelector('input[type="checkbox"]');
+                    } else if (age >= 18) {
+                        const checkbox = aluno.querySelector('input.responsavel');
                         const label = aluno.querySelector('label.responsavel');
                         if (checkbox) {
                             aluno.removeChild(checkbox);
@@ -402,9 +474,15 @@ Se não, deixa em <strong>branco</strong>.</h1>
             });
         </script>
         <style>
-            label[for="assinatura"] {
+            label[for="assinatura"]{
                 font-weight: bold;
                 margin-bottom: 10px;
+                display: block;
+            }
+
+            .assinatudasCheckLabel{
+                color: black;
+                font-weight: bold;
                 display: block;
             }
 
@@ -446,6 +524,16 @@ Se não, deixa em <strong>branco</strong>.</h1>
                 box-sizing: border-box;
                 border: 2px solid #5291C5;
                 border-radius: 8px;
+            }
+            .assinaturasDIV {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                box-sizing: border-box;
+                border: 2px solid #5291C5;
+                border-radius: 8px;
+                padding: 12px 20px;
+                margin: 8px 0;
             }
 
             form.certificados input[type="submit"] {

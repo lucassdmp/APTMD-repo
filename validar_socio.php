@@ -2,12 +2,16 @@
 function validar_socio()
 {
     ob_start();
+
+
     $user_id = get_current_user_id();
     $user = get_user_by('id', $user_id);
     $meta = get_user_meta($user_id);
     $type = $meta['Socio Type'][0];
+    $socion = $meta['Socio'][0];
     $link = '';
     $valid = $meta['Valid'][0];
+    $ftype = explode('-', $type)[0];
     global $wpdb;
 
 
@@ -24,74 +28,112 @@ function validar_socio()
         'amigo-1' => 'Sócio Amigo 1 Semestre',
         'amigo-2' => 'Sócio Amigo 2 Semestres',
         'formador-1' => 'Renovação Sócio Formador Canalização | 1 Semestre',
-        'formador-2' => 'Renovação Sócio Formador Canalização | 2 Semestres'    
+        'formador-2' => 'Renovação Sócio Formador Canalização | 2 Semestres'
     );
-    $plano = $op[$type];
-
+    $plano = $op[$ftype . '-1'];
+    $plano2 = $op[$ftype . '-2'];
     $datas = json_decode(wp_remote_retrieve_body($response), true);
     if (!empty($datas)) {
         foreach ($datas as $data) :
             $status = $data['status'];
 
             foreach ($data['line_items'] as $lineitem) {
-                if ($lineitem['name'] != $plano) {
+                if ($lineitem['name'] != $plano && $lineitem['name'] != $plano2) {
                     continue;
                 }
                 if ($status === 'completed') {
+                    echo $plano." ".$plano2;
                     update_user_meta($user_id, 'Valid', '1');
+                    if ($lineitem['name'] == $plano)
+                        update_user_meta($user_id, 'Socio Type', $ftype . '-1');
+                    else
+                        update_user_meta($user_id, 'Socio Type', $ftype . '-2');
                     break;
                 }
             }
         endforeach;
     }
 
-
     if ($type == '') {
 ?><h1>Você ainda não foi validado!</h1><?php
-                                                return;
-                                            }
+                                        return;
+                                    }
 
-                                                ?>
-    <div class="Socio_container">
-        <h1>As Tuas Informações</h1>
-        <h2 class="TAG">Nome: <h3 class="info"> <?php echo $meta['first_name'][0] . ' ' . $meta['last_name'][0] ?></h3>
-        </h2>
-        <h2 class="TAG">Tipo de Socio: <h3 class="info"> <?php echo $meta['Socio Type'][0] ?></h3>
+                                        ?>
 
-            <?php if ($valid == '1') :
+    <form class="form_valid" action="<?php
+                                        if ($type == 'amigo-1' && $socion == '')
+                                            $link = 'produto/socio-amigo-1-semestre/';
+                                        else if ($type == 'amigo-2' && $socion == '')
+                                            $link = 'produto/socio-amigo-2-semestres/';
+                                        else if ($type == 'terapeuta-1' && $socion == '')
+                                            $link = 'produto/socio-terapeuta-1-semestre/';
+                                        else if ($type == 'terapeuta-2' && $socion == '')
+                                            $link = 'produto/socio-terapeuta-2-semestres/';
+                                        else if ($type == 'formador-1' && $socion == '')
+                                            $link = 'produto/renovacao-socio-formador-1-semestre';
+                                        else if ($type == 'formador-2' && $socion == '')
+                                            $link = 'produto/renovacao-socio-formador-2-semestres';
+                                        else
+                                            $link = '';
+                                        echo home_url($link) ?>" method="post">
+        <div class="Socio_container">
+            <h1>As Tuas Informações</h1>
+            <h2 class="TAG">Nome: <h3 class="info"> <?php echo $meta['first_name'][0] . ' ' . $meta['last_name'][0] ?></h3>
+            </h2>
+            <?php if ($socion == '' || $valid == '1') : ?>
+                <h2 class="TAG">Tipo de Socio: <h3 class="info"> <?php echo $meta['Socio Type'][0] ?></h3>
+                </h2>
+            <?php else : ?>
+                <h2 class="TAG">Tipo de Socio:
+                    <select name='tiposelect' class="tipoSelect">
+                        <option value=''>Escolhe uma opção</option>
+                        <option value="<?php echo $ftype ?>-1"><?php echo ucfirst($ftype) ?> - 1 Semestre</option>
+                        <option value="<?php echo $ftype ?>-2"><?php echo ucfirst($ftype) ?> - 2 Semestre</option>
+                    </select>
+                </h2>
+            <?php endif; ?>
+            <?php if ($valid == '1' || $socion != '') :
                 if ($meta['Socio'][0] == '') {
                     $max_socio = intval($wpdb->get_var("SELECT MAX(CAST(meta_value as UNSIGNED)) FROM $wpdb->usermeta WHERE meta_key = 'Socio'"));
                     $max_socio++;
                     update_user_meta($user_id, 'Socio', $max_socio);
                 }
-                $meta = get_user_meta($user_id);
             ?>
                 <h2 class="TAG">Numero De Sócio: <h3 class="info"><?php echo $meta['Socio'][0] ?></h3>
                 </h2>
             <?php endif; ?>
-            <form action="<?php
-                            if ($type == 'amigo-1')
-                                $link = 'produto/socio-amigo-1-semestre/';
-                            else if ($type == 'amigo-2')
-                                $link = 'produto/socio-amigo-2-semestres/';
-                            else if ($type == 'terapeuta-1')
-                                $link = 'produto/socio-terapeuta-1-semestre/';
-                            else if ($type == 'terapeuta-2')
-                                $link = 'produto/socio-terapeuta-2-semestres/';
-                            else if ($type == 'formador-1')
-                                $link = 'produto/renovacao-socio-formador-1-semestre';
-                            else if ($type == 'formador-2')
-                                $link = 'produto/renovacao-socio-formador-2-semestres';
-                            else
-                                $link = '';
-                            echo home_url($link) ?>" method="post">
-                <?php if ($valid != '1') : ?>
-                    <input class="button" type="submit" name="Validar" value="Próximo Passo">
-                <?php else : ?>
-                    <h1 class="parabens">Parabéns, você já é um sócio!</h1>
-                <?php endif; ?>
-            </form>
-    </div>
+            <?php if ($valid == '1') : ?>
+                <h1 class="parabens">Parabéns, você já é um sócio!</h1>
+            <?php else : ?>
+                <input class="button" type="submit" name="Validar" value="Próximo Passo">
+            <?php endif; ?>
+        </div>
+    </form>
+    <script>
+        const select = document.querySelector('.tipoSelect');
+        const form = document.querySelector('.form_valid');
+        select.addEventListener('change', (event) => {
+            var value = select.value;
+            console.log(value);
+            console.log(form.action);
+            if (value == 'amigo-1')
+                form.action = 'https://aptmd.org/produto/socio-amigo-1-semestre/';
+            else if (value == 'amigo-2')
+                form.action = 'https://aptmd.org/produto/socio-amigo-2-semestres/';
+            else if (value == 'terapeuta-1')
+                form.action = 'https://aptmd.org/produto/socio-terapeuta-1-semestre/';
+            else if (value == 'terapeuta-2')
+                form.action = 'https://aptmd.org/produto/socio-terapeuta-2-semestres/';
+            else if (value == 'formador-1')
+                form.action = 'https://aptmd.org/produto/renovacao-socio-formador-1-semestre';
+            else if (value == 'formador-2')
+                form.action = 'https://aptmd.org/produto/renovacao-socio-formador-2-semestres';
+            else
+                form.action = 'https://aptmd.org/produto/socio-amigo-1-semestre/';
+            console.log(form.action);
+        });
+    </script>
     <style>
         .Socio_container {
             width: 50%;

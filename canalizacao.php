@@ -309,17 +309,32 @@ function canalizacao()
         <?php if ($error <= 0) : ?>
             <h1 class="certificadosh1">Saldo: <?php echo $certi ?> certificados</h1>
             <form class="certificados" method='post' enctype="multipart/form-data">
-                <label for="assinatura"><strong>(Opcional)</strong> Para emitir certificados já assinados, carrega uma imagem com a tua assinatura com estes requisitos:<br>
-                    - Imagem em formato .png (fundo transparente)<br>
-                    - Tamanho máximo 2MB
-                </label>
-                <input type="file" name="assinaturaC" class="assinaturaC" accept="image/*">
-                <?php if ($formador != 'null') : ?>
-                    <label for="assinaturad"><strong>(Opcional)</strong> Carregue uma imagem dentro dos mesmos requisitos estabelecidos contendo a assinatura do outro formador para emitir os certificados já assinados.
+                <label for="assinatudasCheck" class='assinatudasCheckLabel'>DESEJAS INSERIR AS ASSINATURAS DIGITAIS E EMITIR OS CERTIFICADOS JÁ ASSINADOS?</label>
+                <input type="checkbox" name="assinatudasCheck" class='assinatudasCheck'>
+                <div class="assinaturasDIV" hidden>
+                    <label for="assinaturaC"><strong>(Opcional)</strong> Para emitir certificados já assinados, carrega uma imagem com a tua assinatura com estes requisitos:<br>
+                        - Imagem em formato .png (fundo transparente)<br>
+                        - Tamanho máximo 2MB
                     </label>
-                    <input type="file" name="assinaturad" class="assinaturad" accept="image/*">
-                <?php endif; ?>
-                <h1 class="subtitle" style="color: gray; font-size: small;">Se enviares a imagem da tua assinatura, o teu aluno recebe o certificado diretamente por email.</h1>
+                    <input type="file" name="assinaturaC" class="assinaturaC" accept="image/*">
+                    <?php if ($formador != 'null') : ?>
+                        <label for="assinaturad"><strong>(Opcional)</strong> Carregue uma imagem dentro dos mesmos requisitos estabelecidos contendo a assinatura do outro formador para emitir os certificados já assinados.
+                        </label>
+                        <input type="file" name="assinaturad" class="assinaturad" accept="image/*">
+                    <?php endif; ?>
+                    <h1 class="subtitle" style="color: gray; font-size: small;">Se enviares a imagem da tua assinatura, o teu aluno recebe o certificado diretamente por email.</h1>
+                </div>
+                <script>
+                    const assCheck = document.querySelector('.assinatudasCheck');
+                    const assDIVS = document.querySelector('.assinaturasDIV');
+                    assCheck.addEventListener('change', () => {
+                        if (assCheck.checked) {
+                            assDIVS.removeAttribute('hidden');;
+                        } else {
+                            assDIVS.setAttribute('hidden', '');
+                        }
+                    })
+                </script>        
                 <div class="container">
                     <div class="localizacao">
                         <label for="cidade">Cidade:</label>
