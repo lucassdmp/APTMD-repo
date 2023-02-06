@@ -309,8 +309,11 @@ function canalizacao()
         <?php if ($error <= 0) : ?>
             <h1 class="certificadosh1">Saldo: <?php echo $certi ?> certificados</h1>
             <form class="certificados" method='post' enctype="multipart/form-data">
-                <label for="assinatudasCheck" class='assinatudasCheckLabel'>DESEJAS INSERIR AS ASSINATURAS DIGITAIS E EMITIR OS CERTIFICADOS JÁ ASSINADOS?</label>
-                <input type="checkbox" name="assinatudasCheck" class='assinatudasCheck'>
+                <div class='flex'>
+                    <p class='assinatudasCheckLabel'>Marca a caixa para emitir e enviar o(s) certificado(s) assinados digitalmente:<br></p>
+                    <p class="SUBassinatudasCheckLabel">Para Emitir o certificado para impressão não marque a caixa ou cria novamente um novo bloco de certificados.</p>
+                    <input type="checkbox" name="assinatudasCheck" class='assinatudasCheck'>
+                </div>
                 <div class="assinaturasDIV" hidden>
                     <label for="assinaturaC"><strong>(Opcional)</strong> Para emitir certificados já assinados, carrega uma imagem com a tua assinatura com estes requisitos:<br>
                         - Imagem em formato .png (fundo transparente)<br>
@@ -334,9 +337,10 @@ function canalizacao()
                             assDIVS.setAttribute('hidden', '');
                         }
                     })
-                </script>        
+                </script>
                 <div class="container">
                     <div class="localizacao">
+                        <p class="titulo">Localização</p>
                         <label for="cidade">Cidade:</label>
                         <input type="text" name="cidade" id="cidade" required>
                         <label for="pais">Pais:</label>
@@ -345,6 +349,7 @@ function canalizacao()
                         <input type="text" name="espacoformacao" id="espacoformacao" required>
                     </div>
                     <div class="datas">
+                        <p class="titulo">Datas</p>
                         <label for="data_inicio">Inicio:</label>
                         <input type="date" name="data_inicio" id="data_inicio" required>
                         <label for="data_fim">Fim:</label>
@@ -362,6 +367,7 @@ function canalizacao()
                 const aluno1 = document.createElement('div');
                 aluno1.className = 'aluno';
                 aluno1.innerHTML = `
+                    <p class="titulo">Formando</p>
                     <label for="aluno_name[]">Nome Formando:</label>
                     <input type="text" name="aluno_name[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
@@ -395,6 +401,25 @@ function canalizacao()
                         }
                     }
                 });
+
+                const email = aluno1.querySelector('input[type="email"]');
+                email.addEventListener('change', (e) => {
+                    const inputEmail = e.target.value;
+                    if (inputEmail == userEmail) {
+                        const errorMessage = document.createElement("div");
+                        errorMessage.className = "errorEmail";
+                        errorMessage.innerHTML = "O Email não pode ser igual ao teu e não será gerado!";
+                        errorMessage.style.color = "red";
+                        errorMessage.style.fontSize = "14px";
+                        email.after(errorMessage);
+                    } else {
+                        const errorMessage = document.querySelector(".errorEmail");
+                        if (errorMessage) {
+                            errorMessage.remove();
+                        }
+                    }
+                });
+
                 container.appendChild(aluno1);
 
 
@@ -403,6 +428,7 @@ function canalizacao()
                     const aluno = document.createElement('div');
                     aluno.className = 'aluno';
                     aluno.innerHTML = `
+                    <p class="titulo">Formando</p>
                     <label for="aluno_name[]">Nome Formando:</label>
                     <input type="text" name="aluno_name[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
@@ -411,6 +437,11 @@ function canalizacao()
                     <input type="date" name="data_aniversario[]" required>
                     <button class="remover_aluno">Remover Formando</button>
                 `;
+                    const remover_aluno = aluno.querySelector('.remover_aluno');
+                    remover_aluno.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        container.removeChild(aluno);
+                    });
                     const dateInput = aluno.querySelector('input[type="date"]');
                     dateInput.addEventListener('change', (e) => {
                         const inputDate = new Date(e.target.value);
@@ -438,13 +469,54 @@ function canalizacao()
                         }
                     });
 
+                    const email = aluno.querySelector('input[type="email"]');
+                    email.addEventListener('change', (e) => {
+                        const inputEmail = e.target.value;
+                        if (inputEmail == userEmail) {
+                            const errorMessage = document.createElement("div");
+                            errorMessage.className = "errorEmail";
+                            errorMessage.innerHTML = "O Email não pode ser igual ao teu e não será gerado!";
+                            errorMessage.style.color = "red";
+                            errorMessage.style.fontSize = "14px";
+                            email.after(errorMessage);
+                        } else {
+                            const errorMessage = document.querySelector(".errorEmail");
+                            if (errorMessage) {
+                                errorMessage.remove();
+                            }
+                        }
+                    });
+
                     container.appendChild(aluno);
                 });
             </script>
             <style>
+                .titulo {
+                    text-align: center;
+                    font-size: 25px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                }
+
+                .flex {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding-left: 15%;
+                    padding-right: 15%;
+                }
+
                 label[for="assinatura"] {
                     font-weight: bold;
                     margin-bottom: 10px;
+                    display: block;
+                }
+
+                .assinatudasCheckLabel {
+                    color: black;
+                    font-weight: bold;
+                    font-size: 13px;
                     display: block;
                 }
 
@@ -488,6 +560,17 @@ function canalizacao()
                     border-radius: 8px;
                 }
 
+                .assinaturasDIV {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    box-sizing: border-box;
+                    border: 2px solid #5291C5;
+                    border-radius: 8px;
+                    padding: 12px 20px;
+                    margin-bottom: 30px;
+                }
+
                 form.certificados input[type="submit"] {
                     width: 100%;
                     background-color: #5291C5;
@@ -520,11 +603,59 @@ function canalizacao()
                 }
 
                 .aluno {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: start;
                     margin-top: 25px;
                     margin-bottom: 25px;
-                    padding: 20px;
+                    padding: 25px;
                     border: #4992ce 2px solid;
                     border-radius: 5px;
+                }
+
+                .certificadosh1 {
+                    text-align: center;
+                    color: #5291C5;
+                }
+
+                .certificadosh2 {
+                    text-align: center;
+                    color: #5291C5;
+                }
+
+                .assinatudasCheck,
+                .english,
+                input[type="checkbox"].responsavel {
+                    border-color: blue;
+                    width: 20px;
+                    height: 20px;
+                    margin-bottom: 35px;
+                }
+
+                .english {
+                    margin-bottom: 20px;
+                }
+
+                .input[type="checkbox"].responsavel {
+                    margin-bottom: 0px;
+                }
+
+                .SUBassinatudasCheckLabel {
+                    font-size: small;
+                    color: black;
+                    font-weight: normal;
+                    text-align: center;
+                }
+
+                .localizacao,
+                .datas {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: start;
+                    border: 2px solid #5291C5;
+                    border-radius: 5px;
+                    padding: 25px;
+                    margin-bottom: 20px;
                 }
             </style>
         <?php elseif ($error == 1) : ?>

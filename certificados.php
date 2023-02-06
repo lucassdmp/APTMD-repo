@@ -15,10 +15,7 @@ function certificados()
     $certi = 0;
     global $wpdb;
     $error = 0;
-    $redirect = 0;
-    $link_key = "";
     $emitidos = array();
-    $naogerados = array();
     $assinatura = null;
     $assinatura2 = null;
     $formador = 'null';
@@ -150,8 +147,6 @@ function certificados()
                         continue;
                     }
                     if ($email[$i] == $user_email) {
-                        $error = -6;
-                        $naogerados[$i] = $name[$i];
                         continue;
                     }
                     $cert_data = array(
@@ -225,12 +220,12 @@ function certificados()
                         $message2 = "Hello, " . $name[$i] . ",<br><br>Follow a attached your certificate from the Multidimessional Healing Wordshop you completed, from " . $data_inicio . " to " . $data_fim . "<br><br><br><br>Light Greetings,<br>Sincerely<br>APTMD Team<br>";
 
                         if ($assinatura && $assinatura2 && $array) {
-                            wp_mail($email[$i], 'Your Multidimenssional Healing Certificate', $message2, $headers, $attachments);
+                            wp_mail($email[$i], 'Your Multidimensional Healing Certificate', $message2, $headers, $attachments);
                         }
                         if ($assinatura && !$array) {
-                            wp_mail($email[$i], 'Your Multidimenssional Healing Certificate', $message2, $headers, $attachments);
+                            wp_mail($email[$i], 'Your Multidimensional Healing Certificate', $message2, $headers, $attachments);
                         }
-                        wp_mail($user->user_email, 'Multidimenssional Healing Certificate', $message, $headers, $attachments);
+                        wp_mail($user->user_email, 'Multidimensional Healing Certificate', $message, $headers, $attachments);
                     }
 
                     unlink("Certificado TMD - " . $name[$i] . ".svg");
@@ -253,24 +248,25 @@ function certificados()
             <input type="submit" class="formador_extra_submit" value="Próximo">
         </form>
         <style>
+            .certificadosh1 .certificadosh2{
+                text-align: center;
+                color: #5291C5;
+            }
             form.formador_extra_form {
                 background-color: #ffffff;
                 color: black;
                 padding: 20px;
             }
-
             h1.formador_pergunta {
                 text-align: center;
                 font-weight: bold;
                 margin-bottom: 20px;
                 font-size: 1.5em;
             }
-
             form.formador_extra_form label.formador_extra_label {
                 display: block;
                 margin-bottom: 10px;
             }
-
             form.formador_extra_form input[type="text"] {
                 width: 100%;
                 padding: 12px 20px;
@@ -279,7 +275,6 @@ function certificados()
                 border: 2px solid #5291C5;
                 border-radius: 4px;
             }
-
             form.formador_extra_form input[type="submit"] {
                 width: 100%;
                 background-color: #5291C5;
@@ -291,25 +286,13 @@ function certificados()
                 border-radius: 4px;
                 cursor: pointer;
             }
-
             .error {
                 color: red;
                 text-align: center;
             }
         </style>
     <?php else : ?>
-        <?php if ($error <= -3) : ?>
-            <h3 class="error">Os seguintes certificados não foram emitidos: <?php $inte = 0;
-                                                                            foreach ($naogerados as $naoemitido) {
-                                                                                $inte += 1;
-                                                                                if (count($naogerados) == $inte)
-                                                                                    echo $naoemitido . ".";
-                                                                                else
-                                                                                    echo $naoemitido . ", ";
-                                                                            }
-                                                                            ?></h3>
-        <?php endif; ?>
-        <?php if ($error <= -3) : ?>
+        <?php if (!empty($emitidos)) : ?>
             <h3 class="error">Os seguintes certificados já foram emitidos: <?php $inte = 0;
                                                                             foreach ($emitidos as $emitido) {
                                                                                 $inte += 1;
@@ -320,17 +303,22 @@ function certificados()
                                                                             }
                                                                             ?></h3>
         <?php endif; ?>
-        <?php if ($error <= -2) : ?>
+        <?php if ($error == -2) : ?>
             <h3 class="error">A data de inicio deve ser maior que a data de fim!</h3>
         <?php endif; ?>
-        <?php if ($error <= -1) : ?>
+        <?php if ($error == -1) : ?>
             <h3 class="error">A carga horária deve ser maior que 12H</h3>
         <?php endif; ?>
         <?php if ($error <= 0) : ?>
             <h1 class="certificadosh1">Saldo: <?php echo $certi ?> certificados</h1>
             <form class="certificados" method='post' enctype="multipart/form-data">
-                <label for="assinatudasCheck" class='assinatudasCheckLabel'>DESEJAS INSERIR AS ASSINATURAS DIGITAIS E EMITIR OS CERTIFICADOS JÁ ASSINADOS?</label>
-                <input type="checkbox" name="assinatudasCheck" class='assinatudasCheck'>
+                <div class='flex'>
+                    <div class="flex_start">
+                        <input type="checkbox" name="assinatudasCheck" class='assinatudasCheck'>
+                        <p class='assinatudasCheckLabel'>*Marca a caixa para emitir e enviar o(s) certificado(s) assinados digitalmente <span style="text-decoration:underline;">automaticamente</span>:<br></p>
+                    </div>
+                    <p class="SUBassinatudasCheckLabel">*Para emitir o (s) certificado (s) para impressão avança sem marcar a caixa ou cria novamente um novo conjunto de certificado (s).</p>
+                </div>
                 <div class="assinaturasDIV" hidden>
                     <label for="assinatura"><strong>(Opcional)</strong> Para emitir certificados já assinados, carrega uma imagem com a tua assinatura com estes requisitos:<br>
                         - Imagem em formato .png (fundo transparente)<br>
@@ -357,6 +345,7 @@ function certificados()
                 </script>
                 <div class="container">
                     <div class="localizacao">
+                        <p class="titulo">Localização</p>
                         <label for="cidade">Cidade:</label>
                         <input type="text" name="cidade" id="cidade" required>
                         <label for="pais">Pais:</label>
@@ -365,6 +354,7 @@ function certificados()
                         <input type="text" name="espacoformacao" id="espacoformacao" required>
                     </div>
                     <div class="datas">
+                        <p class="titulo">Datas</p>
                         <label for="data_inicio">Inicio:</label>
                         <input type="date" name="data_inicio" id="data_inicio" required>
                         <label for="data_fim">Fim:</label>
@@ -373,8 +363,8 @@ function certificados()
                         <input type="text" name="carga_horaria" id="carga_horaria" required>
                     </div>
                 </div>
-                <input type="submit" value="Criar Certificados" name="criar_cert">
                 <button class="add_cert">Adicionar Mais Um Certificado</button>
+                <input type="submit" value="Criar Certificados" name="criar_cert">
             </form>
         <?php elseif ($error == 1) : ?>
             <h1 class="certificadosh1">Teu Saldo: <?php echo $certi ?> certificados</h1>
@@ -386,10 +376,12 @@ function certificados()
             const button = document.querySelector('.add_cert');
             const container = document.querySelector('.container');
             const aluno1 = document.createElement('div');
+            const userEmail = '<?php echo $user_email?>';
             aluno1.className = 'aluno';
             aluno1.innerHTML = `
-                    <label for="english[]">Deseja Emitir o Certificado em Inglês?</label>
-                    <input type="checkbox" name="english[]" required>
+                    <p class="titulo">Formando</p>
+                    <label for="english[]">Marca a caixa para emitir este Certificado em Inglês:</label>
+                    <input type="checkbox" name="english[]" class="english">
                     <label for="aluno_name[]">Nome Formando:</label>
                     <input type="text" name="aluno_name[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
@@ -424,16 +416,34 @@ function certificados()
                     }
                 }
             });
-            container.appendChild(aluno1);
 
+            const email = aluno1.querySelector('input[type="email"]');
+            email.addEventListener('change', (e) => {
+                const inputEmail = e.target.value;
+                if (inputEmail == userEmail) {
+                    const errorMessage = document.createElement("div");
+                    errorMessage.className = "errorEmail";
+                    errorMessage.innerHTML = "Se o email for igual ao teu, o certificado não será emitido.";
+                    errorMessage.style.color = "red";
+                    errorMessage.style.fontSize = "14px";
+                    email.after(errorMessage);
+                }else{
+                    const errorMessage = document.querySelector(".errorEmail");
+                    if(errorMessage){
+                        errorMessage.remove();
+                    }
+                }
+            });
+            container.appendChild(aluno1);
 
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 const aluno = document.createElement('div');
                 aluno.className = 'aluno';
                 aluno.innerHTML = `
-                    <label for="english[]">Deseja Emitir o Certificado em Inglês?</label>
-                    <input type="checkbox" name="english[]" required>
+                    <p class="titulo">Formando</p>
+                    <label for="english[]">Marca a caixa para emitir este Certificado em Inglês:</label>
+                    <input type="checkbox" name="english[]" class="english">
                     <label for="aluno_name[]">Nome Formando:</label>
                     <input type="text" name="aluno_name[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
@@ -442,6 +452,11 @@ function certificados()
                     <input type="date" name="data_aniversario[]" required>
                     <button class="remover_aluno">Remover Formando</button>
                 `;
+                const remover_aluno = aluno.querySelector('.remover_aluno');
+                remover_aluno.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    container.removeChild(aluno);
+                });
                 const dateInput = aluno.querySelector('input[type="date"]');
                 dateInput.addEventListener('change', (e) => {
                     const inputDate = new Date(e.target.value);
@@ -469,11 +484,49 @@ function certificados()
                         }
                     }
                 });
-
+                const email = aluno.querySelector('input[type="email"]');
+                email.addEventListener('change', (e) => {
+                    const inputEmail = e.target.value;
+                    if (inputEmail == userEmail) {
+                        const errorMessage = document.createElement("div");
+                        errorMessage.className = "errorEmail";
+                        errorMessage.innerHTML = "Se o email for igual ao teu, o certificado não será emitido.";
+                        errorMessage.style.color = "red";
+                        errorMessage.style.fontSize = "14px";
+                        email.after(errorMessage);
+                    }else{
+                        const errorMessage = document.querySelector(".errorEmail");
+                        if(errorMessage){
+                            errorMessage.remove();
+                        }
+                    }
+                });
                 container.appendChild(aluno);
             });
         </script>
         <style>
+            .titulo{
+                text-align: center;
+                font-size: 25px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                color: #5291C5;
+            }
+            .flex_start{
+                display: flex;
+                justify-content: flex-start;
+                align-items: flex-start;
+            }
+            .flex{
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+                padding-left: 15%;
+                padding-right: 15%;
+                margin-bottom: 20px;
+            }
+
             label[for="assinatura"]{
                 font-weight: bold;
                 margin-bottom: 10px;
@@ -483,7 +536,9 @@ function certificados()
             .assinatudasCheckLabel{
                 color: black;
                 font-weight: bold;
+                font-size: 13px;
                 display: block;
+                text-align: center;
             }
 
             label[for="assinatura"] strong {
@@ -533,7 +588,7 @@ function certificados()
                 border: 2px solid #5291C5;
                 border-radius: 8px;
                 padding: 12px 20px;
-                margin: 8px 0;
+                margin-bottom: 30px;
             }
 
             form.certificados input[type="submit"] {
@@ -568,11 +623,50 @@ function certificados()
             }
 
             .aluno {
+                display: flex;
+                flex-direction: column;
+                align-items: start;
                 margin-top: 25px;
                 margin-bottom: 25px;
-                padding: 20px;
+                padding: 25px;
                 border: #4992ce 2px solid;
                 border-radius: 5px;
+            }
+            .certificadosh1{
+                text-align: center;
+                color: #5291C5;
+                text-transform: capitalize !important;
+            }
+            .certificadosh2{
+                text-align: center;
+                color: #5291C5;
+            }
+            .assinatudasCheck, .english, input[type="checkbox"].responsavel{
+                border-color: blue;
+                width: 20px;
+                height: 20px;
+                margin-bottom: 35px;
+            }
+            .english{
+                margin-bottom: 20px;
+            }
+            .input[type="checkbox"].responsavel{
+                margin-bottom: 0px;
+            }
+            .SUBassinatudasCheckLabel{
+                font-size: small;
+                color: black;
+                font-weight: normal;
+                text-align: center;
+            }
+            .localizacao, .datas{
+                display: flex;
+                flex-direction: column;
+                align-items: start;
+                border: 2px solid #5291C5;
+                border-radius: 5px;
+                padding: 25px;
+                margin-bottom: 20px;
             }
         </style>
 <?php endif;
