@@ -20,9 +20,6 @@ function certificados()
     $assinatura2 = null;
     $formador = 'null';
     $english = false;
-    //WOOCOMMERCE REST API
-    //Comsumer key: ck_1de2660a530ed390b4f1eb7e7ad0eab4a73aaa2c
-    //Secret: cs_b8dd7c690aa6f659946d390f56605168026bd9c9  5046   2015
 
 
     //
@@ -64,7 +61,7 @@ function certificados()
 
     $response = wp_remote_get($url, array(
         'headers' => array(
-            'Authorization' => 'Basic ' . base64_encode('ck_1de2660a530ed390b4f1eb7e7ad0eab4a73aaa2c' . ':' . 'cs_b8dd7c690aa6f659946d390f56605168026bd9c9')
+            'Authorization' => 'Basic ' . base64_encode(WC_CONSUMER_KEY . ':' . WC_CONSUMER_SECRET)
         )
     ));
 

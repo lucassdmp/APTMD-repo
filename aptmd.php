@@ -4,6 +4,7 @@
  * Plugin Name: Aptmd Plugin
  * 
  */
+include('KEYS.php');
 function update_user()
 {
     global $wpdb;
