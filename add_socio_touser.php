@@ -13,7 +13,7 @@ function field_user()
         $socio_type = $_POST['socio-type'];
         $check = $_POST['mensagem'] == 'on' ? true : false;
         $user = get_user_by('email', $socio);
-        
+
         if ($user !== false && $check === false) {
             $id = $user->ID;
             update_user_meta($id, "Socio Type", $socio_type);
@@ -28,7 +28,7 @@ function field_user()
                 <h3 class="signature">Associação Portuguesa de Terapia Multidimensional (APTMD)</h3>';
             $header[] = 'Content-Type: text/html;';
             $results = wp_mail($socio, 'APTMD Validação de Sócio', $message, $header);
-        }else if($user !== false && $check){
+        } else if ($user !== false && $check) {
             $id = $user->ID;
             update_user_meta($id, "Socio Type", 'amigo-1');
             $sucess = 1;
@@ -45,15 +45,15 @@ function field_user()
                 <h3 class="signature">Associação Portuguesa de Terapia Multidimensional (APTMD)</h3>';
             $headers = array('Content-Type: text/html; charset=UTF-8');
             $results = wp_mail($socio, 'APTMD Validação de Sócio', $message, $headers);
-        }else{
+        } else {
             $error = -1;
         }
     }
-    if ($error == -1): ?>
+    if ($error == -1) : ?>
         <div class="error">Utilizador Não Encontrado!</div>
     <?php endif;
     if ($sucess === 0) :
-?>
+    ?>
         <form class="form-container" action="" method="post">
             <label for="socio">Email do Sócio</label>
             <input type="email" name="socio" id="socio" required><br>
@@ -66,7 +66,7 @@ function field_user()
             <?php endif; ?>
             <label for="socio-type">Tipo de Sócio</label>
             <select name="socio-type" id="socio-type">
-                <option value="terapeuta-1">Sócio Terapeuta 1 Semestre</option>
+                <option value="terapeuta-1">Sócio Terapeuta 1 Semestre</tion>
                 <option value="terapeuta-2">Sócio Terapeuta 2 Semestre</option>
                 <option value="amigo-1">Sócio Amigo 1 Semestre</option>
                 <option value="amigo-2">Sócio Amigo 2 Semestre</option>
@@ -77,22 +77,46 @@ function field_user()
             <input type="checkbox" name="mensagem" class="mensagem">
             <input type="submit" value="Validar Sócio" name="submitsocioemail">
         </form>
-        
     <?php endif;
     if ($sucess === 1) : ?>
         <div class="sucess">Sócio Validado Com Sucesso!</div>
     <?php endif; ?>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Validado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            global $wpdb;
+            $users = $wpdb->get_results("SELECT u.ID, u.user_login, u.user_email, m2.meta_value as 'Tipo', m3.meta_value as 'Pago' FROM qzorn_users u LEFT JOIN qzorn_usermeta m2 ON u.ID = m2.user_id AND m2.meta_key = 'Socio Type' LEFT JOIN qzorn_usermeta m3 ON u.ID = m3.user_id AND m3.meta_key = 'Valid' where m2.meta_value is null");
+            foreach ($users as $user) {
+                $email = $user->user_email;
+                $name = get_user_by('id', $user->ID)->display_name;
+                $tagID = 'copy-link'.$user->ID;
+                echo "<tr>";
+                echo "<td>$name</td>";
+                echo "<td>$email</td>";
+                echo "<td>Não Validado</td>";
+            }
+            ?>
+        </tbody>
+    </table>
     <style>
         label[for="mensagem"] {
-    font-size: 18px;
-    margin-bottom: 5px;
-    font-family: 'Lato', sans-serif;
-}
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-family: 'Lato', sans-serif;
+        }
 
-.mensagem {
-    width: 20px;
-    height: 20px;
-}
+        .mensagem {
+            width: 20px;
+            height: 20px;
+        }
 
         .sucess {
             color: #3bb35d;

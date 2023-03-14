@@ -4,14 +4,14 @@ function corrigir_datas()
     ob_start();
 
     global $wpdb;
+    var_dump($wpdb);
 
     $encomendas = $wpdb->get_results("SELECT * FROM {$wpdb->posts} 
     WHERE `post_type` = 'ywcmbs-membership' 
     AND `post_status` = 'publish' 
     AND `guid` LIKE '%aptmd.org%'
-    AND `post_title` NOT LIKE '%novo%'
-    ORDER BY `wpre_posts`.`ID` DESC
-    ");
+    AND `post_title` NOT LIKE '%novo%'");
+
     foreach($encomendas as $plan){
         $id = $plan->ID;
         $metas = get_post_meta($id);

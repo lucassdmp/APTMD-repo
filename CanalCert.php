@@ -3,8 +3,8 @@ require 'vendor/autoload.php';
 
 use chillerlan\QRCode\QRCode;
 class CanalCert{
-    private $carga_horaria, $formador_name, $formador_name2, $certificado, $formando_name, $formando_email,  $data_inicio, $data_fim, $cidade, $pais, $espaco, $key, $link_key;
-    public function __construct($formador_name, $formando_name, $formando_email, $nascimento ,$data_inicio, $data_fim, $carga_horaria, $cidade, $pais, $espaco, $assinatura = null, $assinatura2 =  null){
+    private $carga_horaria, $formador1, $formador2, $certificado, $formando_name, $formando_email,  $data_inicio, $data_fim, $cidade, $pais, $espaco, $key, $link_key;
+    public function __construct($formador1, $formador2 = null, $formando_name, $formando_email, $nascimento ,$data_inicio, $data_fim, $carga_horaria, $cidade, $pais, $espaco, $assinatura = null, $assinatura2 =  null){
         $this->formando_name = $formando_name;
         $this->formando_email = $formando_email;
         $this->data_inicio = $data_inicio;
@@ -12,14 +12,14 @@ class CanalCert{
         $this->cidade = $cidade;
         $this->pais = $pais;
         $this->espaco = $espaco;
-        $this->formador_name = $formador_name;
+        $this->formador1 = $formador1;
+        $this->formador2 = $formador2;
         
         $this->carga_horaria = $carga_horaria;
-        $this->key = md5($formando_name . ' '. $nascimento . ' '. $data_inicio . ' ' . $data_fim . ' ' . $formador_name);
+        $this->key = md5($formando_name . ' '. $nascimento . ' '. $data_inicio . ' ' . $data_fim . ' ' . $formador1);
         $this->link_key = 'https://aptmd.org/verificar-certificado/?cert='. $this->key;
-        if(is_array($this->formador_name)){
-            $formador1 = $this->formador_name[0];
-            $formador2 = $this->formador_name[1];
+        
+        if($formador2 != null){
             $this->certificado = "<svg version='1.1' viewBox='0.0 0.0 1122.5196850393702 793.7007874015748' fill='none' stroke='none'
             stroke-linecap='square' stroke-miterlimit='10' xmlns:xlink='http://www.w3.org/1999/xlink'
             xmlns='http://www.w3.org/2000/svg'>
@@ -77,7 +77,6 @@ class CanalCert{
                     $this->certificado .= "<image x='705' y='640' width='200' height='120' xlink:href='data:image/png;base64,".$assinatura2."'></image>";
                 $this->certificado .= "</svg>";
         }else{
-            $this->formador_name = $formador_name;
             $this->certificado = "<svg viewBox='0 0 1123 793' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'>
                 <clipPath id='p.0'>
                   <path d='m0 0l1122.5197 0l0 793.7008l-1122.5197 0l0 -793.7008z' clip-rule='nonzero' id='path70'/>
@@ -97,7 +96,7 @@ class CanalCert{
                   <path style='fill:#86a1a5;fill-opacity:1;stroke-width:0.360773' d='m 397.79256,53.494772 c -0.11789,-0.117893 -0.0478,-0.415024 0.15575,-0.66029 0.26102,-0.314511 0.19933,-0.616695 -0.20929,-1.025321 -0.31866,-0.31866 -0.40544,-0.579382 -0.19284,-0.579382 0.2126,0 0.38654,-0.232581 0.38654,-0.516848 0,-0.852669 1.49458,-1.115771 2.04696,-0.360343 0.57212,0.782416 0.61289,1.237964 0.11081,1.237964 -0.21826,0 -0.27093,0.40315 -0.12964,0.992126 0.13091,0.54567 0.11731,0.880731 -0.0302,0.74458 -0.14753,-0.136151 -0.64072,-0.105929 -1.09597,0.06716 -0.45526,0.173089 -0.9242,0.218248 -1.0421,0.100354 z m 1.10816,-2.332638 c -0.11517,-0.2878 -0.20066,-0.202313 -0.21797,0.217967 -0.0157,0.380315 0.0696,0.593397 0.18949,0.473515 0.11988,-0.119882 0.13269,-0.431049 0.0285,-0.691482 z' id='path9319'/>
                 </g>
                 <path fill='rgb(255,255,255)' stroke='rgb(255,255,255)' stroke-width='0' d='M 374.234 16.319 C 377.461 15.828 381.742 17.194 386.096 17.231 C 391.052 17.273 396.58 14.784 402.519 16.319 C 409.868 18.218 422.592 25.278 426.698 30.461 C 429.64 34.174 430.097 38.615 429.435 42.322 C 428.765 46.072 426.189 49.886 422.592 52.815 C 418.183 56.406 410.2 59.645 403.432 61.027 C 396.529 62.436 388.068 63.012 381.534 61.027 C 375.185 59.098 368.076 54.865 364.654 49.622 C 361.23 44.374 360.033 34.901 361.005 29.549 C 361.804 25.145 365.335 21.245 367.848 19.056 C 369.832 17.327 371.632 16.714 374.234 16.319 Z' style='fill: rgb(255,255,255); stroke: rgb(255,255,255); stroke-width: 2px;'/>
-                <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='14' id='svg_3' y='176' x='500' stroke-width='0' stroke='#000' fill='#000000'>{$this->formador_name}</text>
+                <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='14' id='svg_3' y='176' x='500' stroke-width='0' stroke='#000' fill='#000000'>{$this->formador1}</text>
                 <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='24' id='svg_3' y='410' x='370' stroke-width='0' stroke='#000' fill='#000000'>{$this->formando_name}</text>
                 <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='12' id='svg_3' y='450' x='370' stroke-width='0' stroke='#000' fill='#000000' dy='15'>  Completou um Workshop de {$this->carga_horaria}H realizado no {$this->espaco}, {$this->cidade}, {$this->pais} constituído por:
                   <tspan x='370' dy='20'>- Componente Teórica</tspan>
@@ -108,7 +107,7 @@ class CanalCert{
                   <tspan x='370' dy='20'>- Prática de Canalização pela voz</tspan>
                   <tspan x='370' dy='20'>  Facilitado de {$this->data_inicio} a {$this->data_fim}, graduando-se como canal e estando apto</tspan>
                   <tspan x='370' dy='20'> a praticar esta Arte da Nova Terra e a participar de canalizações de grupo.</tspan></text>
-                  <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='14' id='svg_3' y='740' x='410' stroke-width='0' stroke='#000' fill='#000000'>{$this->formador_name}</text>
+                  <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='14' id='svg_3' y='740' x='410' stroke-width='0' stroke='#000' fill='#000000'>{$this->formador1}</text>
                   <text style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='14' id='svg_3' y='60' x='370' stroke-width='0' stroke='#000' fill='#000000'>". explode('-', $this->data_fim)[0] ."</text>
                   <image x='1043' y='713' width='80' height='80' xlink:href='" . (new QRCode)->render($this->link_key)."'></image>";
                   if ($assinatura != null)
@@ -119,87 +118,6 @@ class CanalCert{
 
     public function get_certificado(){
         return $this->certificado;
-    }
-
-    //getters and setters
-    public function get_formador_name()
-    {
-        return $this->formador_name;
-    }
-
-    public function set_formador_name($formador_name)
-    {
-        $this->formador_name = $formador_name;
-    }
-
-    public function get_formando_name()
-    {
-        return $this->formando_name;
-    }
-
-    public function set_formando_name($formando_name)
-    {
-        $this->formando_name = $formando_name;
-    }   
-
-    public function get_carga_horaria()
-    {
-        return $this->carga_horaria;
-    }
-
-    public function set_carga_horaria($carga_horaria)
-    {
-        $this->carga_horaria = $carga_horaria;
-    }
-
-    public function get_espaco()
-    {
-        return $this->espaco;
-    }
-
-    public function set_espaco($espaco)
-    {
-        $this->espaco = $espaco;
-    }
-
-    public function get_cidade()
-    {
-        return $this->cidade;
-    }
-
-    public function set_cidade($cidade)
-    {
-        $this->cidade = $cidade;
-    }
-
-    public function get_pais()
-    {
-        return $this->pais;
-    }
-
-    public function set_pais($pais)
-    {
-        $this->pais = $pais;
-    }
-
-    public function get_data_inicio()
-    {
-        return $this->data_inicio;
-    }
-
-    public function set_data_inicio($data_inicio)
-    {
-        $this->data_inicio = $data_inicio;
-    }
-
-    public function get_data_fim()
-    {
-        return $this->data_fim;
-    }
-
-    public function set_data_fim($data_fim)
-    {
-        $this->data_fim = $data_fim;
     }
 
     public function get_key(){

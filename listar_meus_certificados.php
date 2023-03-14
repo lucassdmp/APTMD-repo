@@ -22,7 +22,7 @@ function meus_certificados()
 
     if ($mail) {
         $link_key = $mail;
-        $aluno_formado = $wpdb->get_results("SELECT * FROM wpre_aptmd_alunos_formados WHERE `key` = '{$link_key}'");
+        $aluno_formado = $wpdb->get_results("SELECT * FROM " . $wpdb->prefix . "aptmd_alunos_formados WHERE `key` = '{$link_key}'");
         if (!empty($aluno_formado)) {
             $aluno_formado = $aluno_formado[0];
             if ($aluno_formado->id_formador === $user_id) {
@@ -42,7 +42,7 @@ function meus_certificados()
                     $local,
                 );
                 $svg = $certificado->getCertificado();
-                
+
                 if ($mail) {
                     $file = tempnam(sys_get_temp_dir(), 'svg');
                     file_put_contents($file, $svg);
@@ -64,7 +64,7 @@ function meus_certificados()
             }
         }
     }
-    $alunos_formados = $wpdb->get_results("SELECT * FROM wpre_aptmd_alunos_formados WHERE id_formador = $user_id");
+    $alunos_formados = $wpdb->get_results("SELECT * FROM " . $wpdb->prefix . "aptmd_alunos_formados WHERE id_formador = $user_id");
     if ($link_key) :
 ?>
         <h1 class="confirmacao">Certificado Enviado Para Seu Email!</h1>
@@ -98,40 +98,95 @@ function meus_certificados()
         </tbody>
     </table>
     <style>
-        h1.confirmacao {
-            color: #4992ce;
-            font-size: 2.5em;
-            text-align: center;
-            margin: 2em 0;
+        /* Bar and button */
+        input[type="text"]#search {
+            height: 40px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: none;
+            border-bottom: 2px solid #ccc;
+            font-size: 16px;
+            background-color: #f1f1f1;
         }
 
-        table.meus_alunos {
+        input[type="submit"].submitemail {
+            height: 40px;
+            width: 80px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        input[type="submit"].submitemail:hover {
+            background-color: #3e8e41;
+        }
+
+        /* Table styling */
+        table.meus_alunos_tmd {
             width: 100%;
             border-collapse: collapse;
-            margin: 2em 0;
+            border-spacing: 0;
+            margin-top: 20px;
         }
 
-        table.meus_alunos thead {
-            background-color: #4992ce;
-            color: #ffffff;
+        thead.table_header_tmd tr.header_row_tmd {
+            background-color: #4CAF50;
+            color: white;
         }
 
-        table.meus_alunos th,
-        table.meus_alunos td {
-            padding: 1em;
-            border: 1px solid #ccc;
+        th.header_elem_tmd,
+        td.body_elem_tmd {
+            text-align: left;
+            padding: 12px;
         }
 
-        table.meus_alunos tbody tr:hover {
+        th.header_elem_tmd:first-child,
+        td.body_elem_tmd:first-child {
+            text-align: center;
+        }
+
+        tbody.table_body_tmd tr:nth-child(even) {
             background-color: #f2f2f2;
         }
 
+        tbody.table_body_tmd tr:hover {
+            background-color: #ddd;
+        }
+
         a.opcao {
-            display: block;
-            width: 100%;
-            text-align: center;
-            color: #4992ce;
+            color: #4CAF50;
             text-decoration: none;
+        }
+
+        a.opcao:hover {
+            color: #3e8e41;
+            text-decoration: underline;
+        }
+
+        /* Phone compatibility */
+        @media only screen and (max-width: 768px) {
+            table.meus_alunos_tmd {
+                font-size: 14px;
+            }
+
+            input[type="text"]#search {
+                height: 30px;
+                font-size: 14px;
+            }
+
+            input[type="submit"].submitemail {
+                height: 30px;
+                width: 70px;
+                font-size: 14px;
+            }
+
+            th.header_elem_tmd,
+            td.body_elem_tmd {
+                padding: 6px;
+            }
         }
     </style>
 <?php

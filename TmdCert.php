@@ -14,7 +14,7 @@ class TmdCertificado{
     private $key;
     private $certificado;
 
-    function __construct($nome_formador, $nome_formando, $data_inicio, $data_fim, 
+    function __construct($nome_formador, $nome_formador2=null, $nome_formando, $data_inicio, $data_fim, 
     $carga_horaria, $local, $assinatura = null, $assinatura2 = null, $english = false){
         $this->nome_formador = $nome_formador;
         $this->nome_formando = $nome_formando;
@@ -22,7 +22,7 @@ class TmdCertificado{
         $this->data_fim = $data_fim;
         $this->carga_horaria = $carga_horaria;
         $this->local = $local;
-        $this->key = md5($nome_formando.' '.$data_inicio.' '.$data_fim);
+        $this->key = md5($nome_formando.' '.$data_inicio.' '.$data_fim.' '.$local);
         $link_key = 'https://aptmd.org/verificar-certificado/?cert='.$this->key;
         $ano = explode('-', $this->data_fim)[0];
         $semester = intval(explode('-', $this->data_fim)[1]) > 6 ? 'Segundo' : 'Primeiro';
@@ -30,9 +30,7 @@ class TmdCertificado{
         $cidade = explode('/', $this->local)[1];
         $local_formacao = explode('/', $this->local)[2];
         
-        if(is_array($nome_formador) && $english == false){
-            $nome_formador2 = $nome_formador[1];
-            $nome_formador = $nome_formador[0];
+        if($nome_formador2 && $english == false){
             $this->certificado = "<svg version='1.1' viewBox='0.0 0.0 1122.5196850393702 793.7007874015748' fill='none' stroke='none'
             stroke-linecap='square' stroke-miterlimit='10' xmlns:xlink='http://www.w3.org/1999/xlink'
             xmlns='http://www.w3.org/2000/svg'>
@@ -112,7 +110,7 @@ class TmdCertificado{
                 }
                 $this->certificado .= "</g></svg>";
         }
-        else if (!is_array($nome_formador) && $english == false){
+        else if (!$nome_formador2 && $english == false){
             $this->certificado = "<svg version='1.1' viewBox='0.0 0.0 1122.5196850393702 793.7007874015748' fill='none' stroke='none'
             stroke-linecap='square' stroke-miterlimit='10' xmlns:xlink='http://www.w3.org/1999/xlink'
             xmlns='http://www.w3.org/2000/svg'>
@@ -178,7 +176,7 @@ class TmdCertificado{
                 $this->certificado .= "<image x='375' y='595' width='200' height='120' xlink:href='data:image/png;base64,".$assinatura."'></image>";
             $this->certificado .= "</svg>";
 
-        } else if(!is_array($nome_formador) && $english == true){
+        } else if(!$nome_formador2 && $english == true){
             $this->certificado = "<svg version='1.1' viewBox='0.0 0.0 1122.5196850393702 793.7007874015748' fill='none' stroke='none'
             stroke-linecap='square' stroke-miterlimit='10' xmlns:xlink='http://www.w3.org/1999/xlink'
             xmlns='http://www.w3.org/2000/svg'>
@@ -249,7 +247,7 @@ class TmdCertificado{
                 font-family='sans-serif'
                 font-size='12' id='svg_6' y='529.96712' x='336.95795' stroke-width='0' stroke='#000'
                 fill='#000000'>Has completed a workshop of ".$carga_horaria." hours at ".$local_formacao.", in ".$cidade.", ".$pais.".' 
-                <tspan y='529.96712' x='336.95795' dy='20'>Facilitated from  START  to END, graduating as Multidimensional Healer.</tspan></text>
+                <tspan y='529.96712' x='336.95795' dy='20'>Facilitated from ".$data_inicio."  to ".$data_fim.", graduating as Multidimensional Healer.</tspan></text>
                 <text xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='12' id='svg_9' y='730.70367' x='420' stroke-width='0.4' stroke='#000' fill='#000000'>".$nome_formador."</text>
                 <image x='950' y='590' width='80' height='80' xlink:href='". (new QRCode)->render($link_key)."'></image>";
 
@@ -257,9 +255,7 @@ class TmdCertificado{
                     $this->certificado .= "<image x='375' y='595' width='200' height='120' xlink:href='data:image/png;base64,".$assinatura."'></image>";
                 }
                 $this->certificado .= "</svg>";
-        } else if (is_array($nome_formador) && $english == true) {
-            $nome_formador2 = $nome_formador[1];
-            $nome_formador = $nome_formador[0];
+        } else if ($nome_formador2 && $english == true) {
             $this->certificado = "<svg version='1.1' viewBox='0.0 0.0 1122.5196850393702 793.7007874015748' fill='none' stroke='none'
             stroke-linecap='square' stroke-miterlimit='10' xmlns:xlink='http://www.w3.org/1999/xlink'
             xmlns='http://www.w3.org/2000/svg'>
@@ -327,13 +323,13 @@ class TmdCertificado{
             fill='#000000'>" . $nome_formando . "</text>
                 <text opacity='0.75' xml:space='preserve' text-anchor='start'
             font-family='sans-serif' font-size='12' id='svg_5'
-            y='175' x='332.90776' stroke-width='0' stroke='#000' fill='#000000'>Facilitated by: " . $nome_formador . "</text>
+            y='175' x='332.90776' stroke-width='0' stroke='#000' fill='#000000'>Facilitated by: " . $nome_formador ." and ". $nome_formador2."</text>
                 <text
             style='cursor: move;' opacity='0.75' xml:space='preserve' text-anchor='start'
             font-family='sans-serif'
             font-size='12' id='svg_6' y='529.96712' x='336.95795' stroke-width='0' stroke='#000'
             fill='#000000'>Has completed a workshop of " . $carga_horaria . " hours at " . $local_formacao . ", in " . $cidade . ", " . $pais . ".' 
-            <tspan y='529.96712' x='336.95795' dy='20'>Facilitated from  START  to END, graduating as Multidimensional Healer.</tspan></text>
+            <tspan y='529.96712' x='336.95795' dy='20'>Facilitated from ".$data_inicio." to ".$data_fim.", graduating as Multidimensional Healer.</tspan></text>
             <text xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='12' id='svg_9' y='730.70367' x='420' stroke-width='0.4' stroke='#000' fill='#000000'>" . $nome_formador . "</text>
             <text xml:space='preserve' text-anchor='start' font-family='sans-serif' font-size='12' id='svg_9' y='730.70367'
                             x='680' stroke-width='0.4' stroke='#000' fill='#000000'>$nome_formador2</text>

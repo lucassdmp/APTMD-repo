@@ -2,27 +2,28 @@
 require 'vendor/autoload.php';
 require 'CanalCert.php';
 
-use chillerlan\QRCode\QRCode;
-
 function canalizacao()
 {
     ob_start();
     $user = wp_get_current_user();
     $user_id = $user->ID;
-    $user_name = get_user_meta($user_id, 'first_name', true) . ' ' . get_user_meta($user_id, 'last_name', true);
+    $user_name = $user->display_name;
     $certi = 0;
     $error = 0;
     $emitidos = array();
     $formador2 = null;
     $formador2_id = null;
+    $formador2_email = null;
     $solo = false;
     global $wpdb;
+    $handle = null;
 
     $assinatura = null;
     $assinatura2 = null;
 
     $formador = '';
 
+    //TESTED AND WORKING
     $url = "https://aptmd.org/wp-json/wc/v3/orders?customer=" . $user_id;
 
     $response = wp_remote_get($url, array(
@@ -44,7 +45,7 @@ function canalizacao()
                 $quantity = $lineitem['quantity'];
                 //TODO ADICIONAR CHECK DE NOME A BAIXO
                 if ($status === 'completed') {
-                    $results = $wpdb->get_results('SELECT * FROM wpre_aptmd_validar_canal WHERE id = ' . $id);
+                    $results = $wpdb->get_results('SELECT * FROM ' . $wpdb->prefix . 'aptmd_validar_canal WHERE id = ' . $id);
                     if (empty($results)) {
                         $info = array(
                             'id' => $id,
@@ -52,7 +53,8 @@ function canalizacao()
                             'user_id' => $user_id,
                             'status' => 1
                         );
-                        $wpdb->insert('wpre_aptmd_validar_canal', $info);
+                        // $wpdb->insert($wpdb->prefix . 'aptmd_validar_canal', $info);
+                        $wpdb->query("INSERT into " . $wpdb->prefix . "aptmd_validar_canal (id, qty, user_id, status) VALUES ($id, $quantity, $user_id, 1)");
 
                         $certi = intval(get_user_meta($user_id, 'canalizacao', true));
                         $certi = $certi + $quantity;
@@ -66,6 +68,7 @@ function canalizacao()
     $formador = isset($_GET['formador']) ? $_GET['formador'] : 'null';
     if ($formador == '') {
         $formador = 'null';
+        $formador2 = null;
         $solo = true;
     }
     if ($formador != 'null') {
@@ -76,6 +79,7 @@ function canalizacao()
                 $error = 144;
             } else {
                 $formador2_id = $formador2->ID;
+                $formador2_email = $formador2->user_email;
                 $formador2 = $formador2->display_name; //get_user_meta($formador->ID, 'first_name', true) . ' ' . get_user_meta($formador->ID, 'last_name', true);
             }
         } else {
@@ -90,16 +94,30 @@ function canalizacao()
             } else {
                 $formador2 = $formador2[0];
                 $formador2_id = $formador2->ID;
+                $formador2_email = $formador2->user_email;
                 $formador2 = $formador2->display_name; //get_user_meta($formador->ID, 'first_name', true) . ' ' . get_user_meta($formador->ID, 'last_name', true);
             }
         }
-        $user_name = array($user_name, $formador2);
+    }
+
+    if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == UPLOAD_ERR_OK) {
+        $file = $_FILES['csv_file']['tmp_name'];
+        $handle = fopen($file, "r");
+        // var_dump(fgetcsv($handle, 1000, ","));
+        // if (($handle = fopen($file, "r")) !== FALSE) {
+        //     while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+        //         var_dump($data);
+        //     }
+        //     fclose($handle);
+        // }
     }
 
     $certi = intval(get_user_meta($user_id, 'canalizacao', true));
     if ($certi == 0) {
         $error = 1;
     }
+
+    // ############################
 
     if (
         isset($_POST['criar_cert'])
@@ -110,7 +128,7 @@ function canalizacao()
         &&  isset($_POST['cidade'])
         &&  isset($_POST['pais'])
         &&  isset($_POST['espacoformacao'])
-        &&  isset($_POST['carga_horaria'])
+        &&  isset($_POST['carga_horaria']) && $error == 0
     ) {
         if (intval($_POST['carga_horaria']) < 12) {
             $error = -1;
@@ -144,6 +162,7 @@ function canalizacao()
                 for ($i = 0; $i < $counts; $i++) {
                     $certificado = new CanalCert(
                         $user_name,
+                        $formador2,
                         $name[$i],
                         $email[$i],
                         $nascimento[$i],
@@ -156,14 +175,15 @@ function canalizacao()
                         $assinatura,
                         $assinatura2
                     );
-                    $checagem = $wpdb->get_results("SELECT * FROM wpre_aptmd_formador_formados 
-                        WHERE `key` = '" . $certificado->get_key() . "'");
+
+                    $checagem = $wpdb->get_results("SELECT * FROM qzorn_aptmd_formador_formados WHERE `key` = '" . $certificado->get_key() . "'");
                     if ($checagem) {
                         $error = -3;
                         $emitidos[] = $name[$i];
                         continue;
                     }
-                    if (is_array($user_name)) {
+
+                    if ($formador2) {
                         $cert_data = array(
                             'id_formador' => $user_id,
                             'id_formador2' => $formador2_id,
@@ -179,22 +199,22 @@ function canalizacao()
                     } else {
                         $cert_data = array(
                             'id_formador' => $user_id,
+                            'id_formador2' => 0,
                             'nome_aluno' => $name[$i],
                             'email_aluno' => $email[$i],
+                            'carga_horaria' => $carga_horaria,
                             'nascimento' => $nascimento[$i],
                             'data_inicio' => $data_inicio,
                             'data_fim' => $data_fim,
-                            'carga_horaria' => $carga_horaria,
                             'local' => $pais . '/' . $cidade . '/' . $espacoformacao,
-                            'key' => $certificado->get_key(),
+                            'key' => $certificado->get_key()
                         );
                     }
                     update_user_meta($user_id, 'canalizacao', $certi - 1);
                     $certi = $certi - 1;
-                    $wpdb->insert(
-                        'wpre_aptmd_formador_formados',
-                        $cert_data
-                    );
+
+                    $check2 = $wpdb->query("INSERT INTO qzorn_aptmd_formador_formados (id_formador, id_formador2, nome_aluno, email_aluno, nascimento, data_inicio, data_fim, carga_horaria, `local`, `key`) VALUES ('" . $user_id . "', '" . $formador2_id . "', '" . $name[$i] . "', '" . $email[$i] . "', '" . $nascimento[$i] . "', '" . $data_inicio . "', '" . $data_fim . "', '" . $carga_horaria . "', '" . $pais . '/' . $cidade . '/' . $espacoformacao . "', '" . $certificado->get_key() . "')");
+                    // var_dump($certificado->get_certificado());
                     file_put_contents("Certificado Canalização - " . $name[$i] . ".svg", $certificado->get_certificado());
                     $imagick = new Imagick();
                     $imagick->readImage("Certificado Canalização - " . $name[$i] . ".svg");
@@ -203,8 +223,7 @@ function canalizacao()
 
                     $headers = array('Content-Type: text/html; charset=UTF-8');
                     $attachments = array(ABSPATH => "Certificado Canalização - " . $name[$i] . ".pdf");
-                    $array = is_array($user_name);
-                    $user_name = is_array($user_name) ? $user_name[0] : $user_name;
+
                     $message = "Segue em anexo o certificado da tua formação para " . $name[$i] . " 
                     que participou no Workshop de Canalização de " . $data_inicio . " a " . $data_fim . "<br><br> 
                     Se não colocaste a tua assinatura digital no formulário, assina o certificado antes da entrega.<br><br>
@@ -216,11 +235,15 @@ function canalizacao()
                     Cumprimentos de Luz,<br>
                     Equipe APTMD<br>
                     Atenciosamente";
-                    if ($assinatura && $assinatura2 && $array) {
+
+                    if ($assinatura && $assinatura2 && $formador2) {
                         wp_mail($email[$i], 'Certificado de Workshop de Canalização', $message2, $headers, $attachments);
                     }
-                    if ($array == false && $assinatura) {
+                    if (!$formador2 && $assinatura) {
                         wp_mail($email[$i], 'Certificado de Workshop de Canalização', $message2, $headers, $attachments);
+                    }
+                    if ($formador2) {
+                        wp_mail($formador2_email, 'Certificado de Workshop de Canalização', $message, $headers, $attachments);
                     }
                     wp_mail($user->user_email, 'Certificado de Workshop de Canalização', $message, $headers, $attachments);
 
@@ -236,11 +259,12 @@ function canalizacao()
     endif;
     if ($formador === 'null' && !$solo) : ?>
         <form class="formador_extra_form" method="get">
-            <h1 class="formador_pergunta">Este workshop tem mais mais do que 1 Formador?
-                Se sim adiciona o email ou número de sócio.
-                Se não, deixa em <strong>branco</strong>.</h1>
+            <h1 class="formador_pergunta">ATENÇÃO<br><br>
+                Este workshop tem mais do que 1 Formador? <br>
+                Se sim adiciona o email ou número de sócio.<br>
+                Se não, deixa VAZIO.</h1>
             <label for="formador" class="formador_extra_label"></label>
-            <input type="text" name="formador" class="formador_extra" placeholder="Email ou Número de Sócio">
+            <input type="text" name="formador" class="formador_extra" placeholder="Email ou Número do SEGUNDO formador">
             <input type="submit" class="formador_extra_submit" value="Próximo">
         </form>
         <style>
@@ -304,7 +328,22 @@ function canalizacao()
         <?php endif; ?>
 
         <?php if ($error <= 0) : ?>
+            <div class="modal">
+                <div class="modal-content">
+                    <div class="modal-message">
+                        Por favor espere enquanto os certificados são gerados...
+                    </div>
+                    <div class="modal-spinner"></div>
+                </div>
+            </div>
             <h1 class="certificadosh1">Saldo: <?php echo $certi ?> certificados</h1>
+            <form class="formfile" action="" method="post" enctype="multipart/form-data">
+                <p class="assinatudasCheckLabel" for="csv_file">Se quiseres pré-carregar multiplos alunos simultaneamente, faz o upload de um ficheiro .csv com NOME, EMAIL, DATA DE ANIVERSARIO no formato YYYY-MM-DD<br></p>
+                <p class="assinatudasCheckLabel" for="csv_file">Exemplo: Formador Nome, formador@email.com, 1900-12-31<br></p>
+                <input type="file" id="csv_file" name="csv_file" accept=".csv">
+                <input type="submit" name="submit" value="Adicionar Alunos">
+            </form>
+
             <form class="certificados" method='post' enctype="multipart/form-data">
                 <div class='flex'>
                     <p class='assinatudasCheckLabel'>Marca a caixa para emitir e enviar o(s) certificado(s) assinados digitalmente:<br></p>
@@ -354,71 +393,143 @@ function canalizacao()
                         <label for="carga_horaria">Carga Horaria:</label>
                         <input type="text" name="carga_horaria" id="carga_horaria" required>
                     </div>
+                    <?php if ($handle != null) :
+                        while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                            echo '<div class="aluno">
+                                    <p class="titulo">Formando</p>
+                                    <label for="aluno_name[]">Nome Formando:</label>
+                                    <input type="text" name="aluno_name[]" value="' . $data[0] . '" required>
+                                    <label for="aluno_email[]">Email Formando:</label>
+                                    <input type="email" name="aluno_email[]" value="' . $data[1] . '" required>
+                                    <label for="nascimento[]">Data De Nascimento do Formando:</label>
+                                    <input type="date" name="nascimento[]" value="' . $data[2] . '" required>
+                                    <button class="remover_aluno">Remover Formando</button>
+                                </div>';
+                        }
+                    ?>
+                        <script>
+                            const alunos = document.querySelectorAll('.aluno');
+
+                            alunos.forEach(aluno => {
+                                const button = aluno.querySelector('.remover_aluno');
+                                button.addEventListener('click', () => {
+                                    aluno.parentElement.removeChild(aluno);
+                                })
+                                const dateInput = aluno.querySelector('input[type="date"]');
+                                dateInput.addEventListener('change', (e) => {
+                                    const inputDate = new Date(e.target.value);
+                                    // console.log(inputDate);
+                                    const today = new Date();
+                                    const age = today.getFullYear() - inputDate.getFullYear();
+                                    const check = aluno.querySelector('input[type="checkbox"]');
+                                    if (age < 18 && !check) {
+                                        const label = document.createElement('label');
+                                        label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
+                                        label.className = 'responsavel'
+                                        const checkbox = document.createElement('input');
+                                        checkbox.type = 'checkbox';
+                                        checkbox.name = 'responsavel[]';
+                                        checkbox.required = true;
+                                        aluno.appendChild(label);
+                                        aluno.appendChild(checkbox);
+                                    } else if (age >= 18) {
+                                        const checkbox = aluno.querySelector('input[type="checkbox"]');
+                                        const label = aluno.querySelector('label.responsavel');
+                                        if (checkbox) {
+                                            aluno.removeChild(checkbox);
+                                            aluno.removeChild(label);
+                                        }
+                                    }
+                                });
+
+                                const email = aluno.querySelector('input[type="email"]');
+                                email.addEventListener('change', (e) => {
+                                    const inputEmail = e.target.value;
+                                    if (inputEmail == userEmail) {
+                                        const errorMessage = document.createElement("div");
+                                        errorMessage.className = "errorEmail";
+                                        errorMessage.innerHTML = "O Email não pode ser igual ao teu e não será gerado!";
+                                        errorMessage.style.color = "red";
+                                        errorMessage.style.fontSize = "14px";
+                                        email.after(errorMessage);
+                                    } else {
+                                        const errorMessage = document.querySelector(".errorEmail");
+                                        if (errorMessage) {
+                                            errorMessage.remove();
+                                        }
+                                    }
+                                });
+
+                            });
+                        </script>
+                    <?php
+                    endif; ?>
                 </div>
-                <input type="submit" value="Criar Certificados" name="criar_cert">
                 <button class="add_cert">Adicionar Mais Um Certificado</button>
+                <input class="criar_cert" type="submit" value="Criar Certificados" name="criar_cert">
             </form>
             <script>
-                const button = document.querySelector('.add_cert');
-                const container = document.querySelector('.container');
-                const aluno1 = document.createElement('div');
-                aluno1.className = 'aluno';
-                aluno1.innerHTML = `
-                    <p class="titulo">Formando</p>
-                    <label for="aluno_name[]">Nome Formando:</label>
-                    <input type="text" name="aluno_name[]" required>
-                    <label for="aluno_email[]">Email Formando:</label>
-                    <input type="email" name="aluno_email[]" required>
-                    <label for="data_aniversario[]">Data de Nascimento Formando:</label>
-                    <input type="date" name="data_aniversario[]" required>
-                `;
-                const dateInput = aluno1.querySelector('input[type="date"]');
-                dateInput.addEventListener('change', (e) => {
-                    const inputDate = new Date(e.target.value);
-                    console.log(inputDate);
-                    const today = new Date();
-                    const age = today.getFullYear() - inputDate.getFullYear();
-                    const check = aluno1.querySelector('input[type="checkbox"]');
-                    if (age < 18 && !check) {
-                        const label = document.createElement('label');
-                        label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
-                        label.className = 'responsavel'
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.name = 'responsavel[]';
-                        checkbox.required = true;
-                        aluno1.appendChild(label);
-                        aluno1.appendChild(checkbox);
-                    } else if (age >= 18) {
-                        const checkbox = aluno1.querySelector('input[type="checkbox"]');
-                        const label = aluno1.querySelector('label.responsavel');
-                        if (checkbox) {
-                            aluno1.removeChild(checkbox);
-                            aluno1.removeChild(label);
+                <?php if ($handle === null) : ?>
+                    const button = document.querySelector('.add_cert');
+                    const container = document.querySelector('.container');
+                    const aluno1 = document.createElement('div');
+                    aluno1.className = 'aluno';
+                    aluno1.innerHTML = `
+                        <p class="titulo">Formando</p>
+                        <label for="aluno_name[]">Nome Formando:</label>
+                        <input type="text" name="aluno_name[]" required>
+                        <label for="aluno_email[]">Email Formando:</label>
+                        <input type="email" name="aluno_email[]" required>
+                        <label for="nascimento[]">Data de Nascimento Formando:</label>
+                        <input type="date" name="nascimento[]" required>
+                    `;
+                    const dateInput = aluno1.querySelector('input[type="date"]');
+                    dateInput.addEventListener('change', (e) => {
+                        const inputDate = new Date(e.target.value);
+                        console.log(inputDate);
+                        const today = new Date();
+                        const age = today.getFullYear() - inputDate.getFullYear();
+                        const check = aluno1.querySelector('input[type="checkbox"]');
+                        if (age < 18 && !check) {
+                            const label = document.createElement('label');
+                            label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
+                            label.className = 'responsavel'
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.name = 'responsavel[]';
+                            checkbox.required = true;
+                            aluno1.appendChild(label);
+                            aluno1.appendChild(checkbox);
+                        } else if (age >= 18) {
+                            const checkbox = aluno1.querySelector('input[type="checkbox"]');
+                            const label = aluno1.querySelector('label.responsavel');
+                            if (checkbox) {
+                                aluno1.removeChild(checkbox);
+                                aluno1.removeChild(label);
+                            }
                         }
-                    }
-                });
+                    });
 
-                const email = aluno1.querySelector('input[type="email"]');
-                email.addEventListener('change', (e) => {
-                    const inputEmail = e.target.value;
-                    if (inputEmail == userEmail) {
-                        const errorMessage = document.createElement("div");
-                        errorMessage.className = "errorEmail";
-                        errorMessage.innerHTML = "O Email não pode ser igual ao teu e não será gerado!";
-                        errorMessage.style.color = "red";
-                        errorMessage.style.fontSize = "14px";
-                        email.after(errorMessage);
-                    } else {
-                        const errorMessage = document.querySelector(".errorEmail");
-                        if (errorMessage) {
-                            errorMessage.remove();
+                    const email = aluno1.querySelector('input[type="email"]');
+                    email.addEventListener('change', (e) => {
+                        const inputEmail = e.target.value;
+                        if (inputEmail == userEmail) {
+                            const errorMessage = document.createElement("div");
+                            errorMessage.className = "errorEmail";
+                            errorMessage.innerHTML = "O Email não pode ser igual ao teu e não será gerado!";
+                            errorMessage.style.color = "red";
+                            errorMessage.style.fontSize = "14px";
+                            email.after(errorMessage);
+                        } else {
+                            const errorMessage = document.querySelector(".errorEmail");
+                            if (errorMessage) {
+                                errorMessage.remove();
+                            }
                         }
-                    }
-                });
+                    });
 
-                container.appendChild(aluno1);
-
+                    container.appendChild(aluno1);
+                <? endif; ?>
 
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -430,8 +541,8 @@ function canalizacao()
                     <input type="text" name="aluno_name[]" required>
                     <label for="aluno_email[]">Email Formando:</label>
                     <input type="email" name="aluno_email[]" required>
-                    <label for="data_aniversario[]">Data De Nascimento do Formando:</label>
-                    <input type="date" name="data_aniversario[]" required>
+                    <label for="nascimento[]">Data De Nascimento do Formando:</label>
+                    <input type="date" name="nascimento[]" required>
                     <button class="remover_aluno">Remover Formando</button>
                 `;
                     const remover_aluno = aluno.querySelector('.remover_aluno');
@@ -654,7 +765,64 @@ function canalizacao()
                     padding: 25px;
                     margin-bottom: 20px;
                 }
+
+                .modal {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: none;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                }
+
+                .modal-content {
+                    background-color: #fff;
+                    padding: 20px;
+                    text-align: center;
+                    border-radius: 5px;
+                }
+
+                .modal-message {
+                    font-size: 24px;
+                    margin-bottom: 20px;
+                }
+
+                .modal-spinner {
+                    border: 10px solid #f3f3f3;
+                    border-top: 10px solid #3498db;
+                    border-radius: 50%;
+                    width: 50px;
+                    height: 50px;
+                    animation: spin 2s linear infinite;
+                    margin-bottom: 20px;
+                }
+
+                @keyframes spin {
+                    0% {
+                        transform: rotate(0deg);
+                    }
+
+                    100% {
+                        transform: rotate(360deg);
+                    }
+                }
+                <?php if($handle):?>
+                    .formfile{
+                        display: none;
+                    }
+                <?php endif;?>
             </style>
+            <script>
+                const form = document.querySelector('.certificados');
+                form.addEventListener('submit', () => {
+                    const modal = document.querySelector('.modal');
+                    modal.style.display = 'flex';
+                });
+            </script>
         <?php elseif ($error == 1) : ?>
             <h1 class="certificadosh1">Teu Saldo: <?php echo $certi ?> certificados</h1>
             <h5 class="certificadosh2">Tua quantidade de certificados é insuficiente para avança a solicitação!</h5>

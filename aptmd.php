@@ -5,24 +5,12 @@
  * 
  */
 include('KEYS.php');
-function update_user()
-{
-    global $wpdb;
-
-    $all_users = get_users();
-    foreach ($all_users as $user) {
-        $id = $user->ID;
-        wp_set_password('1234socio', $id);
-    }
-}
 function remove_admin_bar() {
   if (!current_user_can('administrator') && !is_admin()) {
     show_admin_bar(false);
   }
 }
 add_action('after_setup_theme', 'remove_admin_bar');
-
-wp_lostpassword_url(home_url('reset-password/'));
 
 include('load_csv.php');
 include('add_socio_touser.php');

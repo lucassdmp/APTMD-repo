@@ -1,34 +1,38 @@
 <?php
 require 'vendor/autoload.php';
 
-use chillerlan\QRCode\QRCode;
-
 require_once 'TmdCert.php';
 function certificados()
 {
     ob_start();
+    #GLOBALS
+    global $wpdb;
+
+    #USER DATA
     $user = wp_get_current_user();
     $user_id = $user->ID;
-    $user_name = get_user_meta($user_id, 'first_name', true) . ' ' . get_user_meta($user_id, 'last_name', true);
+    $user_name = $user->display_name;
     $user_email = $user->user_email;
-    $html = array();
+
+
     $certi = 0;
-    global $wpdb;
     $error = 0;
     $emitidos = array();
     $assinatura = null;
     $assinatura2 = null;
     $formador = 'null';
     $english = false;
+    $handle = null;
+    $formador2_email = null;
+    $formador2_id = null;
 
-
-    //
-
+    #GET FORMADOR FROM GET REQUEST
     $formador = isset($_GET['formador']) ? $_GET['formador'] : 'null';
     if ($formador == '') {
         $formador = 'null';
         $solo = true;
     }
+
     if ($formador != 'null') {
         if (filter_var($formador, FILTER_VALIDATE_EMAIL)) {
             $formador2 = get_user_by('email', $formador);
@@ -36,8 +40,9 @@ function certificados()
                 $formador2 = null;
                 $error = 144;
             } else {
+                $formador2_email = $formador2->user_email;
                 $formador2_id = $formador2->ID;
-                $formador2 = $formador2->display_name; //get_user_meta($formador->ID, 'first_name', true) . ' ' . get_user_meta($formador->ID, 'last_name', true);
+                $formador2 = $formador->display_name;
             }
         } else {
             $args = array(
@@ -45,16 +50,22 @@ function certificados()
                 'meta_value' => $formador,
             );
             $formador2 = get_users($args);
+
             if (empty($formador2)) {
                 $formador2 = null;
                 $error = 144;
             } else {
                 $formador2 = $formador2[0];
+                $formador2_email = $formador2->user_email;
                 $formador2_id = $formador2->ID;
-                $formador2 = $formador2->display_name; //get_user_meta($formador->ID, 'first_name', true) . ' ' . get_user_meta($formador->ID, 'last_name', true);
+                $formador2 = $formador2->display_name;
             }
         }
-        $user_name = array($user_name, $formador2);
+    }
+
+    if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == UPLOAD_ERR_OK) {
+        $file = $_FILES['csv_file']['tmp_name'];
+        $handle = fopen($file, "r");
     }
 
     $url = "https://aptmd.org/wp-json/wc/v3/orders?customer=" . $user_id;
@@ -78,7 +89,7 @@ function certificados()
                 $quantity = $lineitem['quantity'];
                 //TODO ADICIONAR CHECK DE NOME A BAIXO
                 if ($status === 'completed') {
-                    $results = $wpdb->get_results('SELECT * FROM wpre_aptmd_validar_cert WHERE id = ' . $id);
+                    $results = $wpdb->get_results('SELECT * FROM ' . $wpdb->prefix . 'aptmd_validar_cert WHERE id = ' . $id);
                     if (empty($results)) {
                         $info = array(
                             'id' => $id,
@@ -86,7 +97,7 @@ function certificados()
                             'user_id' => $user_id,
                             'status' => 1
                         );
-                        $wpdb->insert('wpre_aptmd_validar_cert', $info);
+                        $wpdb->insert($wpdb->prefix . 'aptmd_validar_cert', $info);
 
                         $certi = intval(get_user_meta($user_id, 'certificados', true));
                         $certi = $certi + $quantity;
@@ -148,6 +159,7 @@ function certificados()
                     }
                     $cert_data = array(
                         'id_formador' => $user_id,
+                        'id_formador2' => $formador2_id,
                         'nome_aluno' => $name[$i],
                         'email_aluno' => $email[$i],
                         'data_inicio' => $data_inicio,
@@ -155,11 +167,10 @@ function certificados()
                         'data_aniversario' => $data_aniversario[$i],
                         'carga_horaria' => $carga_horaria,
                         'local' => $pais . '/' . $cidade . '/' . $espacoformacao,
-                        'key' => md5($name[$i] . ' ' . $data_aniversario[$i] . ' ' .
-                            $data_inicio . ' ' . $data_fim . ' ' . $user_name)
+                        'key' => md5($name[$i] . ' ' . $data_inicio . ' ' . $data_fim . ' ' . $pais . '/' . $cidade . '/' . $espacoformacao),
                     );
 
-                    $checagem = $wpdb->get_results("SELECT * FROM wpre_aptmd_alunos_formados WHERE `key` = '" . $cert_data['key'] . "'");
+                    $checagem = $wpdb->get_results("SELECT * FROM " . $wpdb->prefix . "aptmd_alunos_formados WHERE `key` = '" . $cert_data['key'] . "'");
                     if ($checagem) {
                         $error = -3;
                         $emitidos[] = $name[$i];
@@ -168,7 +179,7 @@ function certificados()
                     update_user_meta($user_id, 'certificados', $certi - 1);
                     $certi = $certi - 1;
                     $wpdb->insert(
-                        'wpre_aptmd_alunos_formados',
+                        $wpdb->prefix . 'aptmd_alunos_formados',
                         $cert_data
                     );
                     if ($englishC[$i] == 'on')
@@ -178,6 +189,7 @@ function certificados()
 
                     $certificado = new TmdCertificado(
                         $user_name,
+                        $formador2,
                         $name[$i],
                         $data_inicio,
                         $data_fim,
@@ -212,9 +224,15 @@ function certificados()
                             wp_mail($email[$i], 'Teu Certificado de Workshop de Terapia Multidimensional', $message2, $headers, $attachments);
                         }
                         wp_mail($user->user_email, 'Certificado de Workshop de Terapia Multidimensional', $message, $headers, $attachments);
-                    }else{
+                    } else {
                         $message = "Follows the certified attached as pdf to " . $name[$i] . " who completed the Multidimensional Healing Workshop from " . $data_inicio . " to " . $data_fim . "<br><br> If you did not upload your signature, please sign before sending the the certificates.<br><br>Light Greetings,<br>Sincerely<br>APTMD Team<br>";
-                        $message2 = "Hello, " . $name[$i] . ",<br><br>Follow a attached your certificate from the Multidimessional Healing Wordshop you completed, from " . $data_inicio . " to " . $data_fim . "<br><br><br><br>Light Greetings,<br>Sincerely<br>APTMD Team<br>";
+                        $message2 = "Dear Multidimensional Healer!<br><br>
+                        It is with great pleasure that I send you the certificate for your Multidimensional Therapy workshop, completed on" . $data_fim . "<br>
+                        We recommend that you read the “Multidimensional Heart” Training Manual available for sale online.<br>
+                        Join our Telegram group for news on Multidimensional Healing: https://t.me/+iEchRfNxGzMyZWM8<br><br>
+                        
+                        Thank you for being part of this world of the heart<br>
+                        on behalf of APTMD Portuguese Association of Multidimensional Healing.<br>";
 
                         if ($assinatura && $assinatura2 && $array) {
                             wp_mail($email[$i], 'Your Multidimensional Healing Certificate', $message2, $headers, $attachments);
@@ -224,7 +242,6 @@ function certificados()
                         }
                         wp_mail($user->user_email, 'Multidimensional Healing Certificate', $message, $headers, $attachments);
                     }
-
                     unlink("Certificado TMD - " . $name[$i] . ".svg");
                     unlink("Certificado TMD - " . $name[$i] . ".pdf");
                 }
@@ -237,33 +254,38 @@ function certificados()
     endif;
     if ($formador === 'null' && !$solo) : ?>
         <form class="formador_extra_form" method="get">
-            <h1 class="formador_pergunta">Este workshop tem mais mais do que 1 Formador?
-                Se sim adiciona o email ou número de sócio.
-                Se não, deixa em <strong>branco</strong>.</h1>
+            <h1 class="formador_pergunta">ATENÇÃO<br><br>
+                Este workshop tem mais do que 1 Formador? <br>
+                Se sim adiciona o email ou número de sócio.<br>
+                Se não, deixa VAZIO.</h1>
             <label for="formador" class="formador_extra_label"></label>
-            <input type="text" name="formador" class="formador_extra" placeholder="Email ou Número de Sócio">
+            <input type="text" name="formador" class="formador_extra" placeholder="Email ou Número do SEGUNDO formador">
             <input type="submit" class="formador_extra_submit" value="Próximo">
         </form>
         <style>
-            .certificadosh1 .certificadosh2{
+            .certificadosh1 .certificadosh2 {
                 text-align: center;
                 color: #5291C5;
             }
+
             form.formador_extra_form {
                 background-color: #ffffff;
-                color: black;
+                color: #ce8549;
                 padding: 20px;
             }
+
             h1.formador_pergunta {
                 text-align: center;
                 font-weight: bold;
                 margin-bottom: 20px;
                 font-size: 1.5em;
             }
+
             form.formador_extra_form label.formador_extra_label {
                 display: block;
                 margin-bottom: 10px;
             }
+
             form.formador_extra_form input[type="text"] {
                 width: 100%;
                 padding: 12px 20px;
@@ -272,6 +294,7 @@ function certificados()
                 border: 2px solid #5291C5;
                 border-radius: 4px;
             }
+
             form.formador_extra_form input[type="submit"] {
                 width: 100%;
                 background-color: #5291C5;
@@ -283,6 +306,7 @@ function certificados()
                 border-radius: 4px;
                 cursor: pointer;
             }
+
             .error {
                 color: red;
                 text-align: center;
@@ -307,7 +331,22 @@ function certificados()
             <h3 class="error">A carga horária deve ser maior que 12H</h3>
         <?php endif; ?>
         <?php if ($error <= 0) : ?>
+            <div class="modal">
+                <div class="modal-content">
+                    <div class="modal-message">
+                        Por favor espere enquanto os certificados são gerados...
+                    </div>
+                    <div class="modal-spinner"></div>
+                </div>
+            </div>
             <h1 class="certificadosh1">Saldo: <?php echo $certi ?> certificados</h1>
+            <form class="formfile" action="" method="post" enctype="multipart/form-data">
+                <p class="assinatudasCheckLabel" for="csv_file">Se quiseres pré-carregar multiplos alunos simultaneamente, faz o upload de um ficheiro .csv com NOME, EMAIL, DATA DE ANIVERSARIO no formato YYYY-MM-DD<br></p>
+                <p class="assinatudasCheckLabel" for="csv_file">Exemplo: Formador Nome, formador@email.com, 1900-12-31<br></p>
+                <input type="file" id="csv_file" name="csv_file" accept=".csv">
+                <input type="submit" name="submit" value="Adicionar Alunos">
+            </form>
+
             <form class="certificados" method='post' enctype="multipart/form-data">
                 <div class='flex'>
                     <div class="flex_start">
@@ -327,7 +366,7 @@ function certificados()
                         </label>
                         <input type="file" name="assinaturad" class="assinatura" accept="image/*">
                     <?php endif; ?>
-                    <h1 class="subtitle" style="font-size: small;">Se enviares a imagem da tua assinatura, o teu aluno recebe o certificado diretamente por email.</h1><br>  
+                    <h1 class="subtitle" style="font-size: small;">Se enviares a imagem da tua assinatura, o teu aluno recebe o certificado diretamente por email.</h1><br>
                 </div>
                 <script>
                     const assCheck = document.querySelector('.assinatudasCheck');
@@ -359,7 +398,79 @@ function certificados()
                         <label for="carga_horaria">Carga Horaria:</label>
                         <input type="text" name="carga_horaria" id="carga_horaria" required>
                     </div>
+                    <?php if ($handle != null) :
+                        while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                            echo '<div class="aluno">
+                                    <p class="titulo">Formando</p>
+                                    <label for="aluno_name[]">Nome Formando:</label>
+                                    <input type="text" name="aluno_name[]" value="' . $data[0] . '" required>
+                                    <label for="aluno_email[]">Email Formando:</label>
+                                    <input type="email" name="aluno_email[]" value="' . $data[1] . '" required>
+                                    <label for="data_aniversario[]">Data De Nascimento do Formando:</label>
+                                    <input type="date" name="data_aniversario[]" value="' . $data[2] . '" required>
+                                    <button class="remover_aluno">Remover Formando</button>
+                                </div>';
+                        }
+                    ?>
+                        <script>
+                            const alunos = document.querySelectorAll('.aluno');
+
+                            alunos.forEach(aluno => {
+                                const button = aluno.querySelector('.remover_aluno');
+                                button.addEventListener('click', () => {
+                                    aluno.parentElement.removeChild(aluno);
+                                })
+                                const dateInput = aluno.querySelector('input[type="date"]');
+                                dateInput.addEventListener('change', (e) => {
+                                    const inputDate = new Date(e.target.value);
+                                    // console.log(inputDate);
+                                    const today = new Date();
+                                    const age = today.getFullYear() - inputDate.getFullYear();
+                                    const check = aluno.querySelector('input[type="checkbox"]');
+                                    if (age < 18 && !check) {
+                                        const label = document.createElement('label');
+                                        label.innerHTML = 'Os responsáveis do formando assinaram o termo de responsabilidade?';
+                                        label.className = 'responsavel'
+                                        const checkbox = document.createElement('input');
+                                        checkbox.type = 'checkbox';
+                                        checkbox.name = 'responsavel[]';
+                                        checkbox.required = true;
+                                        aluno.appendChild(label);
+                                        aluno.appendChild(checkbox);
+                                    } else if (age >= 18) {
+                                        const checkbox = aluno.querySelector('input[type="checkbox"]');
+                                        const label = aluno.querySelector('label.responsavel');
+                                        if (checkbox) {
+                                            aluno.removeChild(checkbox);
+                                            aluno.removeChild(label);
+                                        }
+                                    }
+                                });
+
+                                const email = aluno.querySelector('input[type="email"]');
+                                email.addEventListener('change', (e) => {
+                                    const inputEmail = e.target.value;
+                                    if (inputEmail == userEmail) {
+                                        const errorMessage = document.createElement("div");
+                                        errorMessage.className = "errorEmail";
+                                        errorMessage.innerHTML = "O Email não pode ser igual ao teu e não será gerado!";
+                                        errorMessage.style.color = "red";
+                                        errorMessage.style.fontSize = "14px";
+                                        email.after(errorMessage);
+                                    } else {
+                                        const errorMessage = document.querySelector(".errorEmail");
+                                        if (errorMessage) {
+                                            errorMessage.remove();
+                                        }
+                                    }
+                                });
+
+                            });
+                        </script>
+                    <?php
+                    endif; ?>
                 </div>
+
                 <button class="add_cert">Adicionar Mais Um Certificado</button>
                 <input type="submit" value="Criar Certificados" name="criar_cert">
             </form>
@@ -370,10 +481,11 @@ function certificados()
             </h5>
         <?php endif; ?>
         <script>
+             <?php if ($handle === null) : ?>
             const button = document.querySelector('.add_cert');
             const container = document.querySelector('.container');
             const aluno1 = document.createElement('div');
-            const userEmail = '<?php echo $user_email?>';
+            const userEmail = '<?php echo $user_email ?>';
             aluno1.className = 'aluno';
             aluno1.innerHTML = `
                     <p class="titulo">Formando</p>
@@ -424,14 +536,15 @@ function certificados()
                     errorMessage.style.color = "red";
                     errorMessage.style.fontSize = "14px";
                     email.after(errorMessage);
-                }else{
+                } else {
                     const errorMessage = document.querySelector(".errorEmail");
-                    if(errorMessage){
+                    if (errorMessage) {
                         errorMessage.remove();
                     }
                 }
             });
             container.appendChild(aluno1);
+            <? endif; ?>
 
             button.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -491,9 +604,9 @@ function certificados()
                         errorMessage.style.color = "red";
                         errorMessage.style.fontSize = "14px";
                         email.after(errorMessage);
-                    }else{
+                    } else {
                         const errorMessage = document.querySelector(".errorEmail");
-                        if(errorMessage){
+                        if (errorMessage) {
                             errorMessage.remove();
                         }
                     }
@@ -502,19 +615,21 @@ function certificados()
             });
         </script>
         <style>
-            .titulo{
+            .titulo {
                 text-align: center;
                 font-size: 25px;
                 font-weight: bold;
                 margin-bottom: 10px;
                 color: #5291C5;
             }
-            .flex_start{
+
+            .flex_start {
                 display: flex;
                 justify-content: flex-start;
                 align-items: flex-start;
             }
-            .flex{
+
+            .flex {
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
@@ -524,13 +639,13 @@ function certificados()
                 margin-bottom: 20px;
             }
 
-            label[for="assinatura"]{
+            label[for="assinatura"] {
                 font-weight: bold;
                 margin-bottom: 10px;
                 display: block;
             }
 
-            .assinatudasCheckLabel{
+            .assinatudasCheckLabel {
                 color: black;
                 font-weight: bold;
                 font-size: 13px;
@@ -577,6 +692,7 @@ function certificados()
                 border: 2px solid #5291C5;
                 border-radius: 8px;
             }
+
             .assinaturasDIV {
                 display: flex;
                 flex-direction: column;
@@ -629,34 +745,44 @@ function certificados()
                 border: #4992ce 2px solid;
                 border-radius: 5px;
             }
-            .certificadosh1{
+
+            .certificadosh1 {
                 text-align: center;
                 color: #5291C5;
                 text-transform: capitalize !important;
             }
-            .certificadosh2{
+
+            .certificadosh2 {
                 text-align: center;
                 color: #5291C5;
             }
-            .assinatudasCheck, .english, input[type="checkbox"].responsavel{
+
+            .assinatudasCheck,
+            .english,
+            input[type="checkbox"].responsavel {
                 border-color: blue;
                 width: 20px;
                 height: 20px;
                 margin-bottom: 35px;
             }
-            .english{
+
+            .english {
                 margin-bottom: 20px;
             }
-            .input[type="checkbox"].responsavel{
+
+            .input[type="checkbox"].responsavel {
                 margin-bottom: 0px;
             }
-            .SUBassinatudasCheckLabel{
+
+            .SUBassinatudasCheckLabel {
                 font-size: small;
                 color: black;
                 font-weight: normal;
                 text-align: center;
             }
-            .localizacao, .datas{
+
+            .localizacao,
+            .datas {
                 display: flex;
                 flex-direction: column;
                 align-items: start;
@@ -664,8 +790,63 @@ function certificados()
                 border-radius: 5px;
                 padding: 25px;
                 margin-bottom: 20px;
-            }
-        </style>
+            }.modal {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: none;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                }
+
+                .modal-content {
+                    background-color: #fff;
+                    padding: 20px;
+                    text-align: center;
+                    border-radius: 5px;
+                }
+
+                .modal-message {
+                    font-size: 24px;
+                    margin-bottom: 20px;
+                }
+
+                .modal-spinner {
+                    border: 10px solid #f3f3f3;
+                    border-top: 10px solid #3498db;
+                    border-radius: 50%;
+                    width: 50px;
+                    height: 50px;
+                    animation: spin 2s linear infinite;
+                    margin-bottom: 20px;
+                }
+
+                @keyframes spin {
+                    0% {
+                        transform: rotate(0deg);
+                    }
+
+                    100% {
+                        transform: rotate(360deg);
+                    }
+                }
+                <?php if($handle):?>
+                    .formfile{
+                        display: none;
+                    }
+                <?php endif;?>
+            </style>
+            <script>
+                const form = document.querySelector('.certificados');
+                form.addEventListener('submit', () => {
+                    const modal = document.querySelector('.modal');
+                    modal.style.display = 'flex';
+                });
+            </script>
 <?php endif;
     return ob_get_clean();
 }

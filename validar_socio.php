@@ -12,7 +12,16 @@ function validar_socio()
     $link = '';
     $valid = $meta['Valid'][0];
     $ftype = explode('-', $type)[0];
+    $display_name = $user->display_name;
     global $wpdb;
+    echo $valid . " " . $type . " " . $socion;
+
+    if ($socion == '' && $valid == '1' && $type != '') {
+        echo "debug socio not empty";
+        $max_socio = intval($wpdb->get_var("SELECT MAX(CAST(meta_value as UNSIGNED)) FROM $wpdb->usermeta WHERE meta_key = 'Socio'"));
+        $max_socio++;
+        update_user_meta($user_id, 'Socio', $max_socio);
+    }
 
 
     $url = "https://aptmd.org/wp-json/wc/v3/orders?customer=" . $user_id;
@@ -27,8 +36,8 @@ function validar_socio()
         'terapeuta-2' => 'Sócio Terapeuta 2 Semestres',
         'amigo-1' => 'Sócio Amigo 1 Semestre',
         'amigo-2' => 'Sócio Amigo 2 Semestres',
-        'formador-1' => 'Renovação Sócio Formador Canalização | 1 Semestre',
-        'formador-2' => 'Renovação Sócio Formador Canalização | 2 Semestres'
+        'formador-1' => 'Renovação Sócio Formador 1 Semestres',
+        'formador-2' => 'Renovação Sócio Formador 2 Semestres'
     );
     $plano = $op[$ftype . '-1'];
     $plano2 = $op[$ftype . '-2'];
@@ -42,7 +51,7 @@ function validar_socio()
                     continue;
                 }
                 if ($status === 'completed') {
-                    echo $plano." ".$plano2;
+                    // echo $plano." ".$plano2;
                     update_user_meta($user_id, 'Valid', '1');
                     if ($lineitem['name'] == $plano)
                         update_user_meta($user_id, 'Socio Type', $ftype . '-1');
@@ -61,30 +70,15 @@ function validar_socio()
 
                                         ?>
 
-    <form class="form_valid" action="<?php
-                                        if ($type == 'amigo-1' && $socion == '')
-                                            $link = 'produto/socio-amigo-1-semestre/';
-                                        else if ($type == 'amigo-2' && $socion == '')
-                                            $link = 'produto/socio-amigo-2-semestres/';
-                                        else if ($type == 'terapeuta-1' && $socion == '')
-                                            $link = 'produto/socio-terapeuta-1-semestre/';
-                                        else if ($type == 'terapeuta-2' && $socion == '')
-                                            $link = 'produto/socio-terapeuta-2-semestres/';
-                                        else if ($type == 'formador-1' && $socion == '')
-                                            $link = 'produto/renovacao-socio-formador-1-semestre';
-                                        else if ($type == 'formador-2' && $socion == '')
-                                            $link = 'produto/renovacao-socio-formador-2-semestres';
-                                        else
-                                            $link = '';
-                                        echo home_url($link) ?>" method="post">
+    <form class="form_valid" action="" method="post">
         <div class="Socio_container">
             <h1>As Tuas Informações</h1>
-            <h2 class="TAG">Nome: <h3 class="info"> <?php echo $meta['first_name'][0] . ' ' . $meta['last_name'][0] ?></h3>
+            <h2 class="TAG">Nome: <h3 class="info"> <?php echo $display_name ?></h3>
             </h2>
-            <?php if ($socion == '' || $valid == '1') : ?>
+            <?php if ($socion != '' && $valid == '1') : ?>
                 <h2 class="TAG">Tipo de Socio: <h3 class="info"> <?php echo $meta['Socio Type'][0] ?></h3>
                 </h2>
-            <?php else : ?>
+            <?php endif; if($socion == '' && $valid == '') : ?>
                 <h2 class="TAG">Tipo de Socio:
                     <select name='tiposelect' class="tipoSelect">
                         <option value=''>Escolhe uma opção</option>
@@ -93,13 +87,7 @@ function validar_socio()
                     </select>
                 </h2>
             <?php endif; ?>
-            <?php if ($valid == '1' || $socion != '') :
-                if ($meta['Socio'][0] == '') {
-                    $max_socio = intval($wpdb->get_var("SELECT MAX(CAST(meta_value as UNSIGNED)) FROM $wpdb->usermeta WHERE meta_key = 'Socio'"));
-                    $max_socio++;
-                    update_user_meta($user_id, 'Socio', $max_socio);
-                }
-            ?>
+            <?php if ($valid == '1' && $socion != '') :?>
                 <h2 class="TAG">Numero De Sócio: <h3 class="info"><?php echo $meta['Socio'][0] ?></h3>
                 </h2>
             <?php endif; ?>

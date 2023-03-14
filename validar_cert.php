@@ -16,7 +16,7 @@ function validar_cert()
         </form>
         <?php endif;
     if ($cert !== '') :
-        $results = $wpdb->get_results('SELECT * FROM wpre_aptmd_alunos_formados WHERE `key` = "' . $cert . '"');
+        $results = $wpdb->get_results('SELECT * FROM '.$wpdb->prefix.'aptmd_alunos_formados WHERE `key` = "' . $cert . '"');
         if ($results) :
             $formador = get_user_by('id', $results[0]->id_formador); ?>
             <h3 class="validado">Certificado Emitido pela APTMD!</h3>
@@ -33,7 +33,7 @@ function validar_cert()
             </style>
         <?php endif;
         if (!$results) : 
-            $results = $wpdb->get_results('SELECT * FROM wpre_aptmd_formador_formados WHERE `key` = "' . $cert . '"');?>
+            $results = $wpdb->get_results('SELECT * FROM '.$wpdb->prefix.'aptmd_formador_formados WHERE `key` = "' . $cert . '"');?>
             <?php if($results):
                 $formador = get_user_by('id', $results[0]->id_formador); 
                 $formador2 = $results[0]->id_formador2==null ? null : get_user_by('id', $results[0]->id_formador2)?>

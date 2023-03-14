@@ -20,7 +20,7 @@ function meus_canalizacao(){
 
     if(isset($_GET['mail'])){
         $mail = $_GET['mail'];
-        $aluno = $wpdb->get_row("SELECT * FROM wpre_aptmd_formador_formados WHERE key = '$mail'");
+        $aluno = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."aptmd_formador_formados WHERE key = '$mail'");
         $formador1 = get_user_by('id', $aluno->id_formador);
         $formador1 = $formador1->first_name . ' ' . $formador1->last_name;
         $formador2 = get_user_by('id', $aluno->id_formador2);
